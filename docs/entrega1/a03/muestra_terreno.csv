@@ -1,0 +1,21 @@
+﻿N°;Edificio;Dirección;Comuna;Equipo;Vence certificación;Hallazgo en planilla;¿Existe en terreno?;Identificador en terreno;Vencimiento según placa;Comentario
+7;Condominio El Bosque 4;Pedro de Valdivia 1984;La Florida;A1;;sin fecha de certificación;;;;
+17;Edificio Plaza 3;Av. Macul 3715;La Florida;A2;11/12/2026;sin observaciones;;;;
+20;Torre Pacífico 2;Av. Grecia 1195;La Florida;A1;;sin fecha de certificación;;;;
+30;Edificio Las Palmas;San Diego 2027;Las Condes;A1;17-02-2027;sin observaciones;;;;
+140;TORRE ORIENTE;Exequiel  Fernández 1307;Las Condes;Asc. 1;07-10-2028;repetido de la fila 42;;;;
+42;Torre Oriente;Exequiel Fernández 1307;Las Condes;A1;07-10-2028;sin observaciones;;;;
+46;Torre Oriente 4;Alcántara 3533;Las Condes;A3;18-01-28;sin observaciones;;;;
+53;Torre Alameda 2;Carmen 799;Macul;A1;;sin fecha de certificación;;;;
+61;Edificio Las Palmas 2;Pedro de Valdivia 1831;Providencia;A1;03-10-2027;marcado como retirado;;;;
+67;Edificio Mirador;Gran Avenida 1397;Providencia;A1;03/12/2026;sin observaciones;;;;
+77;Edificio Portal 3;Exequiel Fernández 612;Providencia;A4;28/09/2027;sin observaciones;;;;
+78;Torre Andes 3;Eliodoro Yáñez 1680;Providencia;A1;;sin fecha de certificación;;;;
+84;Edificio Mirador 2;Lira 1658;San Miguel;A2;30-03-27;repetido de la fila 22;;;;
+85;Edificio Mirador 2;Lira 1658;San Miguel;A3;03-05-2027;sin observaciones;;;;
+104;Edificio Parque 2;San Diego 1458;Santiago;A1;;sin fecha de certificación;;;;
+105;Edificio Plaza;Lira 157;Santiago;A1;28-08-2028;sin observaciones;;;;
+133;Edificio Plaza 2;Santa Rosa 3185;Ñuñoa;A1;16-08-27;repetido de la fila 127;;;;
+138;Torre Alameda 4;Av. Macul 159;Ñuñoa;A3;07/11/2026;sin observaciones;;;;
+143;Torre Pacífico 4;Av. Apoquindo 2417;Ñuñoa;A3;09-07-28;repetido de la fila 66;;;;
+142;Torre Pacífico 4;Av. Apoquindo 2417;Ñuñoa;A2;23/04/2028;sin observaciones;;;;

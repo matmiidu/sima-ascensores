@@ -1,0 +1,7 @@
+Filas en la planilla: 144
+Filas con al menos un problema: 19
+  sin fecha de certificación: 9
+  comuna mal escrita: 5
+  repetido: 4
+  marcado como retirado: 1
+Muestra para terreno: 20 filas (10 sospechosas y 10 al azar)
