@@ -34,6 +34,7 @@ class RegistroCarteraTests(APITestCase):
         self.crear_edificio()
         r = self.crear_edificio(nombre="Otro nombre")
         self.assertEqual(r.status_code, 400)
+        self.assertIn("Ya hay un edificio registrado", r.data["direccion"][0])
 
     def test_registra_ascensores_y_aparecen_en_su_edificio(self):
         edificio_id = self.crear_edificio().data["id"]
@@ -51,7 +52,9 @@ class RegistroCarteraTests(APITestCase):
         edificio_id = self.crear_edificio().data["id"]
         datos = {"edificio": edificio_id, "identificador": "A1", "tipo": "electrico", "paradas": 5}
         self.client.post("/api/ascensores/", datos, format="json")
-        self.assertEqual(self.client.post("/api/ascensores/", datos, format="json").status_code, 400)
+        r = self.client.post("/api/ascensores/", datos, format="json")
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("Ya existe el ascensor A1 en este edificio", r.data["identificador"][0])
 
     def test_rechaza_menos_de_dos_paradas(self):
         edificio_id = self.crear_edificio().data["id"]

@@ -17,8 +17,9 @@ function mensajeDeError(datos: unknown): string {
   if (!datos || typeof datos !== 'object') return ''
   const d = datos as Record<string, unknown>
   if (typeof d.detail === 'string') return d.detail
-  return Object.entries(d)
-    .map(([campo, v]) => `${campo === 'non_field_errors' ? '' : campo + ': '}${Array.isArray(v) ? v.join(' ') : String(v)}`)
+  // Los mensajes del servidor ya dicen qué corregir; no se antepone el nombre interno del campo.
+  return Object.values(d)
+    .map((v) => (Array.isArray(v) ? v.join(' ') : String(v)))
     .join(' · ')
 }
 

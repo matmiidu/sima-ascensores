@@ -21,6 +21,20 @@ class AscensorSerializer(serializers.ModelSerializer):
             "marca", "numero_serie", "paradas", "capacidad_kg", "fecha_instalacion",
             "vencimiento_certificacion", "activo",
         ]
+        # La unicidad se revisa en validate() para dar un mensaje que diga qué corregir.
+        validators = []
+
+    def validate(self, datos):
+        edificio = datos.get("edificio", getattr(self.instance, "edificio", None))
+        identificador = datos.get("identificador", getattr(self.instance, "identificador", None))
+        repetido = Ascensor.objects.filter(edificio=edificio, identificador=identificador)
+        if self.instance:
+            repetido = repetido.exclude(pk=self.instance.pk)
+        if repetido.exists():
+            raise serializers.ValidationError({
+                "identificador": f"Ya existe el ascensor {identificador} en este edificio. Usa otro identificador."
+            })
+        return datos
 
     def validate_paradas(self, valor):
         if valor < 2:
@@ -41,6 +55,19 @@ class EdificioSerializer(serializers.ModelSerializer):
             "administrador_nombre", "administrador_correo", "administrador_telefono",
             "tecnico_asignado", "tecnico_nombre", "activo", "total_ascensores", "ascensores",
         ]
+        validators = []
+
+    def validate(self, datos):
+        direccion = datos.get("direccion", getattr(self.instance, "direccion", None))
+        comuna = datos.get("comuna", getattr(self.instance, "comuna", None))
+        repetido = Edificio.objects.filter(direccion__iexact=direccion, comuna__iexact=comuna)
+        if self.instance:
+            repetido = repetido.exclude(pk=self.instance.pk)
+        if repetido.exists():
+            raise serializers.ValidationError({
+                "direccion": f"Ya hay un edificio registrado en {direccion}, {comuna}: {repetido.first().nombre}."
+            })
+        return datos
 
     def get_total_ascensores(self, obj):
         return sum(1 for a in obj.ascensores.all() if a.activo)
