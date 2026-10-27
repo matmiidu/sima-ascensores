@@ -60,6 +60,15 @@ class CalendarioTests(TestCase):
         r = generar_calendario(2026, 11)
         self.assertEqual(r.creadas, 2)
 
+    def test_ascensor_agregado_despues_va_el_mismo_dia_que_su_edificio(self):
+        generar_calendario(2026, 11)
+        e = Edificio.objects.get(nombre="Edificio 1")
+        dia = Visita.objects.filter(ascensor__edificio=e).first().fecha
+        nuevo = Ascensor.objects.create(edificio=e, identificador="A9", tipo="electrico")
+        self.assertEqual(generar_calendario(2026, 11).creadas, 1)
+        visita = Visita.objects.get(ascensor=nuevo)
+        self.assertEqual((visita.fecha, visita.tecnico), (dia, self.juan))
+
     def test_reemplazar_conserva_las_visitas_realizadas(self):
         generar_calendario(2026, 11)
         hecha = Visita.objects.first()

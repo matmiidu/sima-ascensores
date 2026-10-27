@@ -13,7 +13,8 @@ Reglas:
 - Si la carga no cabe en la capacidad, igual se programa (ningún equipo queda
   sin visita) y se informa la sobrecarga para que el jefe técnico decida.
 - Generar dos veces el mismo mes no duplica visitas: solo agrega los equipos
-  que todavía no tienen. Con reemplazar=True se borran antes las visitas
+  que todavía no tienen. Si el edificio ya tenía visitas ese mes, el equipo
+  nuevo va el mismo día que los demás, si cabe en la capacidad. Con reemplazar=True se borran antes las visitas
   programadas (no las realizadas) y se vuelve a repartir.
 """
 import calendar
@@ -114,6 +115,12 @@ def generar_calendario(anio, mes, reemplazar=False, usuario=None):
         carga[t.id] += len(ascensores)
         bloques[t.id].append((edificio, ascensores))
 
+    # Si el edificio ya tiene visitas este mes (se agregó un ascensor después de
+    # generar), los nuevos van ese mismo día con ese técnico mientras quepan.
+    dia_del_edificio = {}
+    for v in Visita.objects.filter(mes=inicio).select_related("ascensor").order_by("fecha"):
+        dia_del_edificio.setdefault((v.ascensor.edificio_id, v.tecnico_id), v.fecha)
+
     nuevas = []
     for tecnico_id, lista in bloques.items():
         tecnico = tecnicos_por_id[tecnico_id]
@@ -123,6 +130,13 @@ def generar_calendario(anio, mes, reemplazar=False, usuario=None):
         i = 0
         for edificio, ascensores in lista:
             restantes = list(ascensores)
+            previo = dia_del_edificio.get((edificio.id, tecnico_id))
+            if previo:
+                espacio = max(0, cap - ocup[previo])
+                for a in restantes[:espacio]:
+                    nuevas.append(Visita(ascensor=a, tecnico=tecnico, mes=inicio, fecha=previo))
+                ocup[previo] += len(restantes[:espacio])
+                restantes = restantes[espacio:]
             while restantes:
                 # Avanza al primer día que no haya alcanzado la meta pareja.
                 while i < len(dias) - 1 and ocup[dias[i]] >= meta:
