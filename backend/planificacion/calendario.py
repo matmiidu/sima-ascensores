@@ -8,17 +8,19 @@ Reglas:
 - Solo se programan días hábiles: lunes a viernes que no sean feriado.
 - El técnico es el asignado al edificio. Si el edificio no tiene uno activo, se
   le da al técnico con menos carga ese mes y se avisa.
-- La carga de cada técnico se reparte en forma pareja entre los días hábiles,
-  agrupando los edificios por comuna para acortar los traslados.
+- Los edificios de cada técnico se reparten a lo largo de todo el mes: con n
+  edificios y d días hábiles, el k-ésimo va cerca del día k·d/n. Se recorren
+  ordenados por comuna, así que los vecinos quedan en días cercanos. Si el
+  edificio completo no cabe ese día, va al siguiente día en que quepa.
 - Si la carga no cabe en la capacidad, igual se programa (ningún equipo queda
   sin visita) y se informa la sobrecarga para que el jefe técnico decida.
 - Generar dos veces el mismo mes no duplica visitas: solo agrega los equipos
   que todavía no tienen. Si el edificio ya tenía visitas ese mes, el equipo
-  nuevo va el mismo día que los demás, si cabe en la capacidad. Con reemplazar=True se borran antes las visitas
-  programadas (no las realizadas) y se vuelve a repartir.
+  nuevo va el mismo día que los demás, si cabe en la capacidad. Con
+  reemplazar=True se borran antes las visitas programadas (no las realizadas)
+  y se vuelve a repartir.
 """
 import calendar
-import math
 from collections import OrderedDict, defaultdict
 from dataclasses import dataclass, field
 from datetime import date, timedelta
@@ -125,10 +127,8 @@ def generar_calendario(anio, mes, reemplazar=False, usuario=None):
     for tecnico_id, lista in bloques.items():
         tecnico = tecnicos_por_id[tecnico_id]
         cap = max(1, tecnico.capacidad_diaria)
-        meta = min(cap, math.ceil(carga[tecnico_id] / len(dias)))
         ocup = ocupacion[tecnico_id]
-        i = 0
-        for edificio, ascensores in lista:
+        for k, (edificio, ascensores) in enumerate(lista):
             restantes = list(ascensores)
             previo = dia_del_edificio.get((edificio.id, tecnico_id))
             if previo:
@@ -137,9 +137,12 @@ def generar_calendario(anio, mes, reemplazar=False, usuario=None):
                     nuevas.append(Visita(ascensor=a, tecnico=tecnico, mes=inicio, fecha=previo))
                 ocup[previo] += len(restantes[:espacio])
                 restantes = restantes[espacio:]
+            # Día que le toca al edificio para que el mes quede repartido; si no
+            # cabe completo, el siguiente día en que quepa.
+            i = k * len(dias) // len(lista)
+            i = next((j for j in range(i, len(dias)) if ocup[dias[j]] + len(restantes) <= cap), i)
             while restantes:
-                # Avanza al primer día que no haya alcanzado la meta pareja.
-                while i < len(dias) - 1 and ocup[dias[i]] >= meta:
+                while i < len(dias) - 1 and ocup[dias[i]] >= cap:
                     i += 1
                 dia = dias[i]
                 if ocup[dia] >= cap:

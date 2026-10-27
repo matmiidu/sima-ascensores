@@ -60,6 +60,17 @@ class CalendarioTests(TestCase):
         r = generar_calendario(2026, 11)
         self.assertEqual(r.creadas, 2)
 
+    def test_reparte_los_edificios_a_lo_largo_de_todo_el_mes(self):
+        generar_calendario(2026, 11)
+        dias = dias_habiles(2026, 11)
+        for tecnico in (self.juan, self.camila):
+            visitas = Visita.objects.filter(tecnico=tecnico)
+            edificios = visitas.values("ascensor__edificio").distinct().count()
+            fechas = sorted(set(visitas.values_list("fecha", flat=True)))
+            # Cada edificio en su propio día y el último en la segunda mitad del mes.
+            self.assertEqual(len(fechas), edificios)
+            self.assertGreater(fechas[-1], dias[len(dias) // 2])
+
     def test_ascensor_agregado_despues_va_el_mismo_dia_que_su_edificio(self):
         generar_calendario(2026, 11)
         e = Edificio.objects.get(nombre="Edificio 1")
