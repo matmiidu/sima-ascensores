@@ -55,7 +55,7 @@ export default function Calendario() {
       setMensaje(
         r.creadas === 0
           ? 'No había equipos sin visita: el calendario ya estaba completo.'
-          : `Se programaron ${r.creadas} visitas${r.ya_programadas && !reemplazar ? ` (ya había ${r.ya_programadas})` : ''}.`,
+          : `${r.creadas === 1 ? 'Se programó 1 visita' : `Se programaron ${r.creadas} visitas`}${r.ya_programadas && !reemplazar ? ` (ya había ${r.ya_programadas})` : ''}.`,
       )
       await cargar()
     } catch (e) {
