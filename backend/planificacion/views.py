@@ -1,12 +1,22 @@
 from datetime import date
 
+from django.utils import timezone
 from rest_framework import status, viewsets
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+
+from cartera.models import Tecnico
+from config.permisos import LecturaOJefe, es_jefe, tecnico_de
 
 from .calendario import CalendarioError, cobertura, dias_habiles, generar_calendario
 from .models import Feriado, GeneracionCalendario, Visita
-from .serializers import FeriadoSerializer, GenerarSerializer, GeneracionSerializer, VisitaSerializer
+from .serializers import (
+    FeriadoSerializer,
+    GenerarSerializer,
+    GeneracionSerializer,
+    VisitaDelDiaSerializer,
+    VisitaSerializer,
+)
 
 
 def _mes_param(request):
@@ -25,6 +35,7 @@ def _mes_param(request):
 
 class VisitaViewSet(viewsets.ModelViewSet):
     serializer_class = VisitaSerializer
+    permission_classes = [LecturaOJefe]
 
     def get_queryset(self):
         qs = Visita.objects.select_related("ascensor", "ascensor__edificio", "tecnico")
@@ -48,9 +59,11 @@ class VisitaViewSet(viewsets.ModelViewSet):
 class FeriadoViewSet(viewsets.ModelViewSet):
     queryset = Feriado.objects.all()
     serializer_class = FeriadoSerializer
+    permission_classes = [LecturaOJefe]
 
 
 @api_view(["POST"])
+@permission_classes([LecturaOJefe])
 def generar(request):
     datos = GenerarSerializer(data=request.data)
     datos.is_valid(raise_exception=True)
@@ -82,4 +95,51 @@ def resumen(request):
         "dias_habiles": [d.isoformat() for d in dias_habiles(anio, mes)],
         "carga": list(carga.values()),
         "ultima_generacion": GeneracionSerializer(ultima).data if ultima else None,
+    })
+
+
+@api_view(["GET"])
+def mis_visitas(request):
+    """Visitas de un técnico para un día (H04).
+
+    El técnico ve solo las suyas: se sabe quién es por su usuario. El jefe
+    técnico puede mirar las de cualquier técnico con ?tecnico=ID. Sin ?fecha se
+    usa el día de hoy. Además devuelve las visitas atrasadas: las programadas
+    para un día anterior del mes en curso que siguen sin hacerse.
+    """
+    hoy = timezone.localdate()
+    tecnico = tecnico_de(request.user)
+    if tecnico is None:
+        if not es_jefe(request.user):
+            return Response(
+                {"detail": "Tu usuario no está asociado a un técnico. Pide al jefe técnico que lo asocie."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        pedido = request.query_params.get("tecnico", "")
+        tecnico = Tecnico.objects.filter(pk=pedido).first() if pedido.isdigit() else None
+        if tecnico is None:
+            return Response({"detail": "Indica de qué técnico son las visitas."}, status=status.HTTP_400_BAD_REQUEST)
+
+    valor = request.query_params.get("fecha")
+    try:
+        fecha = date.fromisoformat(valor) if valor else hoy
+    except ValueError:
+        return Response({"detail": "El parámetro fecha debe tener la forma AAAA-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
+    suyas = (
+        Visita.objects.filter(tecnico=tecnico)
+        .select_related("ascensor", "ascensor__edificio", "tecnico")
+        .order_by("fecha", "ascensor__edificio__comuna", "ascensor__edificio__nombre", "ascensor__edificio_id",
+                  "ascensor__identificador")
+    )
+    atrasadas = suyas.filter(mes=hoy.replace(day=1), fecha__lt=hoy, estado=Visita.Estado.PROGRAMADA)
+    # Si el día consultado no tiene visitas, sirve saber cuándo es la siguiente.
+    proxima = suyas.filter(fecha__gt=fecha, estado=Visita.Estado.PROGRAMADA).values_list("fecha", flat=True).first()
+    return Response({
+        "tecnico": {"id": tecnico.id, "nombre": tecnico.nombre},
+        "hoy": hoy.isoformat(),
+        "fecha": fecha.isoformat(),
+        "visitas": VisitaDelDiaSerializer(suyas.filter(fecha=fecha), many=True).data,
+        "atrasadas": VisitaDelDiaSerializer(atrasadas, many=True).data,
+        "proxima_fecha": proxima.isoformat() if proxima else None,
     })

@@ -6,8 +6,10 @@ from rest_framework.response import Response
 from rest_framework.routers import DefaultRouter
 
 from cartera.views import AscensorViewSet, EdificioViewSet, TecnicoViewSet
-from planificacion.views import FeriadoViewSet, VisitaViewSet, generar, resumen
+from planificacion.views import FeriadoViewSet, VisitaViewSet, generar, mis_visitas, resumen
 from terreno.views import ChecklistPruebaViewSet
+
+from .permisos import es_jefe, tecnico_de
 
 router = DefaultRouter()
 router.register("tecnicos", TecnicoViewSet, basename="tecnico")
@@ -20,8 +22,15 @@ router.register("poc/checklists", ChecklistPruebaViewSet, basename="checklist-pr
 
 @api_view(["GET"])
 def yo(request):
+    """Quién entró: su nombre y si es el jefe técnico o un técnico."""
     u = request.user
-    return Response({"usuario": u.username, "nombre": u.get_full_name() or u.username})
+    tecnico = tecnico_de(u)
+    return Response({
+        "usuario": u.username,
+        "nombre": (tecnico.nombre if tecnico else u.get_full_name()) or u.username,
+        "es_jefe": es_jefe(u),
+        "tecnico": {"id": tecnico.id, "nombre": tecnico.nombre} if tecnico else None,
+    })
 
 
 admin.site.site_header = "SIMA · Ascensores Altavía"
@@ -33,5 +42,6 @@ urlpatterns = [
     path("api/yo/", yo),
     path("api/calendario/generar/", generar),
     path("api/calendario/resumen/", resumen),
+    path("api/mis-visitas/", mis_visitas),
     path("api/", include(router.urls)),
 ]

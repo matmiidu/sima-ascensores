@@ -1,6 +1,7 @@
 """Cartera de edificios y equipos (EP1, historia H01)."""
 from datetime import date
 
+from django.conf import settings
 from django.db import models
 
 
@@ -13,6 +14,12 @@ class Tecnico(models.Model):
     activo = models.BooleanField(default=True)
     # Ascensores que puede atender en un día hábil; lo usa el calendario (H03).
     capacidad_diaria = models.PositiveSmallIntegerField(default=6)
+    # Usuario con que el técnico entra desde el celular (H04). Con él SIMA sabe
+    # de quién son las visitas que muestra. Vacío si todavía no tiene acceso.
+    usuario = models.OneToOneField(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="tecnico",
+        help_text="Usuario con que el técnico entra a SIMA desde el celular.",
+    )
 
     class Meta:
         ordering = ["nombre"]

@@ -1,6 +1,8 @@
 from django.db.models import Prefetch, Q
 from rest_framework import viewsets
 
+from config.permisos import LecturaOJefe
+
 from .models import Ascensor, Edificio, Tecnico
 from .serializers import AscensorSerializer, EdificioSerializer, TecnicoSerializer
 
@@ -8,10 +10,12 @@ from .serializers import AscensorSerializer, EdificioSerializer, TecnicoSerializ
 class TecnicoViewSet(viewsets.ModelViewSet):
     queryset = Tecnico.objects.all()
     serializer_class = TecnicoSerializer
+    permission_classes = [LecturaOJefe]
 
 
 class EdificioViewSet(viewsets.ModelViewSet):
     serializer_class = EdificioSerializer
+    permission_classes = [LecturaOJefe]
 
     def get_queryset(self):
         qs = Edificio.objects.select_related("tecnico_asignado").prefetch_related(
@@ -28,6 +32,7 @@ class EdificioViewSet(viewsets.ModelViewSet):
 
 class AscensorViewSet(viewsets.ModelViewSet):
     serializer_class = AscensorSerializer
+    permission_classes = [LecturaOJefe]
 
     def get_queryset(self):
         qs = Ascensor.objects.select_related("edificio")

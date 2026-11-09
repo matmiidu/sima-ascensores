@@ -1,7 +1,10 @@
 // Cliente de la API de SIMA. El token se guarda en el celular para no pedir
 // la clave en cada visita.
 
+import type { Sesion } from './tipos'
+
 const CLAVE_TOKEN = 'sima.token'
+const CLAVE_SESION = 'sima.sesion'
 
 export class ErrorApi extends Error {
   estado: number
@@ -37,6 +40,25 @@ export function guardarToken(t: string | null) {
     else localStorage.removeItem(CLAVE_TOKEN)
   } catch {
     /* sin almacenamiento: la sesión dura lo que dure la pestaña */
+  }
+}
+
+// Quién entró (nombre y si es jefe técnico o técnico). Se guarda una copia en
+// el celular para que la aplicación abra aunque no haya señal.
+export function sesionGuardada(): Sesion | null {
+  try {
+    return JSON.parse(localStorage.getItem(CLAVE_SESION) || 'null')
+  } catch {
+    return null
+  }
+}
+
+export function guardarSesion(s: Sesion | null) {
+  try {
+    if (s) localStorage.setItem(CLAVE_SESION, JSON.stringify(s))
+    else localStorage.removeItem(CLAVE_SESION)
+  } catch {
+    /* sin almacenamiento: se vuelve a pedir al servidor */
   }
 }
 

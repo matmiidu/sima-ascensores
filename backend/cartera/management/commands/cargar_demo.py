@@ -2,7 +2,9 @@
 (48 residenciales y 14 de otros usos) y 140 ascensores.
 
 Los datos son inventados y siempre salen iguales (semilla fija), para que las
-pruebas y las capturas se puedan repetir. Uso:
+pruebas y las capturas se puedan repetir. Deja además los usuarios de prueba:
+"jefe" para el jefe técnico y uno por técnico (su nombre de pila), todos con la
+misma clave. Uso:
 
     python manage.py cargar_demo            # solo si la base está vacía
     python manage.py cargar_demo --borrar   # borra la cartera y la vuelve a cargar
@@ -15,6 +17,10 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from cartera.models import Ascensor, Edificio, Tecnico
+from cartera.usuarios import crear_usuarios_tecnicos
+from planificacion.models import GeneracionCalendario
+
+CLAVE_DEMO = "sima"
 
 TECNICOS = [
     "Juan Pérez", "Rodrigo Soto", "Camila Rojas", "Luis Muñoz", "Andrés Díaz", "Felipe Contreras",
@@ -59,12 +65,20 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, borrar=False, **opts):
+        User = get_user_model()
         if Edificio.objects.exists() and not borrar:
             self.stdout.write("La cartera ya tiene datos; use --borrar para recargarla.")
+            creados = crear_usuarios_tecnicos(CLAVE_DEMO)
+            if creados:
+                self.stdout.write(f"Se crearon los usuarios de los técnicos que faltaban: {', '.join(creados)} "
+                                  f"(clave {CLAVE_DEMO}).")
             return
         if borrar:
+            # Al borrar los ascensores se van también sus visitas del calendario.
             Ascensor.objects.all().delete()
             Edificio.objects.all().delete()
+            GeneracionCalendario.objects.all().delete()
+            User.objects.filter(tecnico__isnull=False).delete()
             Tecnico.objects.all().delete()
 
         rng = random.Random(2026)
@@ -113,13 +127,15 @@ class Command(BaseCommand):
                     vencimiento_certificacion=hoy + timedelta(days=rng.randint(-20, vigencia)),
                 )
 
-        User = get_user_model()
         if not User.objects.filter(username="jefe").exists():
-            jefe = User.objects.create_superuser("jefe", "jefe@ejemplo.cl", "sima")
+            jefe = User.objects.create_superuser("jefe", "jefe@ejemplo.cl", CLAVE_DEMO)
             jefe.first_name, jefe.last_name = "Jefe", "Técnico"
             jefe.save()
+        crear_usuarios_tecnicos(CLAVE_DEMO)
+        usuarios = ", ".join(Tecnico.objects.exclude(usuario=None).values_list("usuario__username", flat=True))
 
         self.stdout.write(self.style.SUCCESS(
             f"Cargados {Tecnico.objects.count()} técnicos, {Edificio.objects.count()} edificios "
-            f"y {Ascensor.objects.count()} ascensores. Usuario de prueba: jefe / sima"
+            f"y {Ascensor.objects.count()} ascensores. Usuarios de prueba (clave {CLAVE_DEMO}): jefe para el jefe "
+            f"técnico; {usuarios} para los técnicos."
         ))

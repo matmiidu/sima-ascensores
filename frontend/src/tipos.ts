@@ -75,6 +75,44 @@ export interface Visita {
   estado: 'programada' | 'realizada' | 'no_realizada'
 }
 
+// Quién entró: el jefe técnico administra; un técnico ve sus visitas (H04).
+export interface Sesion {
+  usuario: string
+  nombre: string
+  es_jefe: boolean
+  tecnico: { id: number; nombre: string } | null
+}
+
+// Una visita tal como la ve el técnico en el celular (H04).
+export interface VisitaDelDia {
+  id: number
+  fecha: string
+  mes: string
+  estado: 'programada' | 'realizada' | 'no_realizada'
+  ascensor: number
+  ascensor_identificador: string
+  marca: string
+  paradas: number
+  tipo_display: string
+  edificio_id: number
+  edificio_nombre: string
+  direccion: string
+  comuna: string
+  administrador_nombre: string
+  administrador_telefono: string
+  tecnico: number
+  tecnico_nombre: string
+}
+
+export interface MisVisitasDelDia {
+  tecnico: { id: number; nombre: string }
+  hoy: string
+  fecha: string
+  visitas: VisitaDelDia[]
+  atrasadas: VisitaDelDia[]
+  proxima_fecha: string | null
+}
+
 export interface Resumen {
   mes: string
   equipos_activos: number

@@ -16,3 +16,14 @@ export const diaLargo = (iso: string) => {
 }
 
 export const nombreMes = (anio: number, mes: number) => `${MESES[mes - 1]} de ${anio}`
+
+const aIso = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+export const sumarDias = (iso: string, dias: number) => {
+  const d = leer(iso)
+  d.setDate(d.getDate() + dias)
+  return aIso(d)
+}
+
+export const mayuscula = (texto: string) => texto.charAt(0).toUpperCase() + texto.slice(1)

@@ -26,4 +26,4 @@ class AscensorAdmin(admin.ModelAdmin):
 
 @admin.register(Tecnico)
 class TecnicoAdmin(admin.ModelAdmin):
-    list_display = ["nombre", "telefono", "capacidad_diaria", "activo"]
+    list_display = ["nombre", "telefono", "capacidad_diaria", "usuario", "activo"]

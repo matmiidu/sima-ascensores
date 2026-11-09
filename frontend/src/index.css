@@ -104,6 +104,13 @@ label { display: block; margin-bottom: 12px; font-weight: 600; font-size: 0.95re
 .opciones button { font-size: 0.9rem; padding: 6px; }
 .opciones button.elegida { background: var(--azul); color: #fff; border-color: var(--azul); }
 
+/* Mis visitas (H04) */
+.centro { text-align: center; margin: 0 0 4px; }
+.separado { margin-top: 28px; }
+.edificio h3 .tenue { font-weight: 400; }
+.edificio > p.tenue { margin: 0 2px 4px; }
+button.enlace { min-height: 0; padding: 0; border: none; background: none; color: var(--azul); text-decoration: underline; font-size: inherit; }
+
 .ingreso { max-width: 380px; padding-top: 12vh; text-align: center; }
 .ingreso form { text-align: left; }
 .ingreso button { width: 100%; }
