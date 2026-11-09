@@ -24,12 +24,15 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // La aplicación abre sin señal; los datos de lectura usan la última copia.
+        // La aplicación abre sin señal. El panel /admin y la API no pasan por ella.
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//, /^\/admin\//],
+        navigateFallbackDenylist: [/^\/(api|admin|static)(\/|$)/],
         runtimeCaching: [
           {
-            urlPattern: ({ url }) => url.pathname.startsWith('/api/') && !url.pathname.startsWith('/api/poc/'),
+            // Consultas del jefe técnico: si no hay señal se muestra la última copia.
+            // Lo del técnico en terreno (visitas del día, checklist y mantenciones)
+            // no pasa por aquí: su copia la maneja la aplicación en terreno.ts.
+            urlPattern: ({ url }) => /^\/api\/(edificios|ascensores|tecnicos|visitas|feriados|calendario)\//.test(url.pathname),
             handler: 'NetworkFirst',
             method: 'GET',
             options: { cacheName: 'api-lectura', networkTimeoutSeconds: 4 },

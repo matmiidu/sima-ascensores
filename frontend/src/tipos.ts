@@ -60,6 +60,14 @@ export interface Edificio {
   ascensores: Ascensor[]
 }
 
+// Lo esencial de la mantención registrada en una visita (H06).
+export interface ResumenRegistro {
+  id: number
+  codigo: string
+  operativo: boolean
+  guardado_en_dispositivo: string
+}
+
 export interface Visita {
   id: number
   ascensor: number
@@ -73,6 +81,7 @@ export interface Visita {
   mes: string
   fecha: string
   estado: 'programada' | 'realizada' | 'no_realizada'
+  registro: ResumenRegistro | null
 }
 
 // Quién entró: el jefe técnico administra; un técnico ve sus visitas (H04).
@@ -102,6 +111,7 @@ export interface VisitaDelDia {
   administrador_telefono: string
   tecnico: number
   tecnico_nombre: string
+  registro: ResumenRegistro | null
 }
 
 export interface MisVisitasDelDia {
@@ -113,10 +123,50 @@ export interface MisVisitasDelDia {
   proxima_fecha: string | null
 }
 
+// Checklist de mantención (H06).
+export type Resultado = 'bien' | 'observacion' | 'no_aplica'
+
+export const RESULTADOS: Record<Resultado, string> = {
+  bien: 'Bien',
+  observacion: 'Con observación',
+  no_aplica: 'No aplica',
+}
+
+export interface PuntoChecklist {
+  id: number
+  codigo: string
+  descripcion: string
+  orden: number
+}
+
+// Una mantención ya guardada en el servidor, con sus respuestas.
+export interface RegistroMantencion {
+  id: number
+  codigo: string
+  id_local: string
+  visita: number
+  fecha_programada: string
+  ascensor: number
+  ascensor_identificador: string
+  edificio_id: number
+  edificio_nombre: string
+  direccion: string
+  comuna: string
+  tecnico: number
+  tecnico_nombre: string
+  operativo: boolean
+  falla_descripcion: string
+  observaciones: string
+  guardado_en_dispositivo: string
+  recibido: string
+  respuestas: { punto: number; codigo: string; descripcion: string; resultado: Resultado; comentario: string }[]
+}
+
 export interface Resumen {
   mes: string
   equipos_activos: number
   con_visita: number
+  realizadas: number
   sin_visita: { id: number; nombre: string }[]
   dias_habiles: string[]
   carga: { tecnico: string; capacidad: number; total: number; por_dia: Record<string, number> }[]

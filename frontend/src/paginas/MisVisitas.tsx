@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import { api } from '../api'
-import { diaLargo, mayuscula, sumarDias } from '../fechas'
-import type { MisVisitasDelDia, Sesion, VisitaDelDia } from '../tipos'
-
-const ESTADOS = {
-  programada: { clase: '', texto: 'Programada' },
-  realizada: { clase: 'ok', texto: 'Realizada' },
-  no_realizada: { clase: 'peligro', texto: 'No realizada' },
-}
+import { Link } from 'react-router-dom'
+import { diaLargo, horaDe, mayuscula, sumarDias } from '../fechas'
+import { alCambiar, cargarDia, cargarPuntos, quitar, sincronizar, type DiaCargado, type MantencionLocal } from '../terreno'
+import type { Sesion, VisitaDelDia } from '../tipos'
+import { useEnLinea } from '../useEnLinea'
+import { useMantencionesLocales } from '../useTerreno'
 
 // Los ascensores de un edificio se visitan juntos: se muestran bajo su edificio.
 function porEdificio(visitas: VisitaDelDia[]) {
@@ -20,7 +17,30 @@ function porEdificio(visitas: VisitaDelDia[]) {
   return [...grupos.values()]
 }
 
-function Edificio({ visitas, conFecha }: { visitas: VisitaDelDia[]; conFecha?: boolean }) {
+type Locales = Map<number, MantencionLocal>
+
+/** Una visita cuenta como registrada si el servidor la tiene Realizada o si está guardada en el celular. */
+const registrada = (v: VisitaDelDia, locales: Locales) =>
+  v.estado === 'realizada' || ['pendiente', 'enviada'].includes(locales.get(v.id)?.estado ?? '')
+
+function Estado({ visita, hoy, local }: { visita: VisitaDelDia; hoy: string; local?: MantencionLocal }) {
+  const ruta = `/mis-visitas/${visita.id}`
+  if (visita.estado === 'realizada' || local?.estado === 'enviada') {
+    const hora = visita.registro?.guardado_en_dispositivo ?? local?.guardado_en_dispositivo
+    const operativo = visita.registro?.operativo ?? local?.operativo ?? true
+    return (
+      <Link to={ruta} className={`etiqueta ${operativo ? 'ok' : 'peligro'}`}>
+        {operativo ? 'Realizada' : 'Detenido'}{hora ? ` ${horaDe(hora)}` : ''}
+      </Link>
+    )
+  }
+  if (local?.estado === 'pendiente') return <Link to={ruta} className="etiqueta alerta">En el celular</Link>
+  if (visita.estado === 'no_realizada') return <span className="etiqueta peligro">No realizada</span>
+  if (visita.fecha > hoy) return <span className="etiqueta">Programada</span>
+  return <Link to={ruta} className="boton primario">Registrar</Link>
+}
+
+function Edificio({ visitas, hoy, locales, conFecha }: { visitas: VisitaDelDia[]; hoy: string; locales: Locales; conFecha?: boolean }) {
   const e = visitas[0]
   return (
     <div className="edificio">
@@ -40,7 +60,7 @@ function Edificio({ visitas, conFecha }: { visitas: VisitaDelDia[]; conFecha?: b
               </span>
             </div>
             <span className="derecha">
-              <span className={`etiqueta ${ESTADOS[v.estado].clase}`}>{ESTADOS[v.estado].texto}</span>
+              <Estado visita={v} hoy={hoy} local={locales.get(v.id)} />
             </span>
           </li>
         ))}
@@ -59,30 +79,45 @@ function Edificio({ visitas, conFecha }: { visitas: VisitaDelDia[]; conFecha?: b
   )
 }
 
+/** Visitas del técnico para un día (H04), con el acceso al checklist de cada una (H06). */
 export default function MisVisitas({ sesion }: { sesion: Sesion }) {
   // Sin fecha elegida se pide el día de hoy, que lo decide el servidor.
   const [fecha, setFecha] = useState('')
-  const [datos, setDatos] = useState<MisVisitasDelDia | null>(null)
+  const [dia, setDia] = useState<DiaCargado | null>(null)
   const [error, setError] = useState('')
+  const enLinea = useEnLinea()
+  const guardadas = useMantencionesLocales()
 
   const cargar = useCallback(async () => {
-    setError('')
     try {
-      setDatos(await api<MisVisitasDelDia>(`mis-visitas/${fecha ? `?fecha=${fecha}` : ''}`))
+      setDia(await cargarDia(fecha))
+      setError('')
     } catch (e) {
       setError((e as Error).message)
     }
   }, [fecha])
 
+  // Se vuelve a pedir la lista al cambiar de día, al volver la señal y cuando
+  // termina un envío, para que lo recién enviado aparezca como Realizada.
   useEffect(() => {
     cargar()
-  }, [cargar])
+  }, [cargar, enLinea])
+  useEffect(() => alCambiar((aviso) => aviso === 'sincronizado' && cargar()), [cargar])
 
-  if (!datos) return <p className={error ? 'error' : 'tenue'}>{error || 'Cargando…'}</p>
+  // Con señal se deja a mano el checklist, para poder abrirlo después sin señal.
+  useEffect(() => {
+    if (enLinea) cargarPuntos().catch(() => {})
+  }, [enLinea])
 
+  if (!dia) return <p className={error ? 'error' : 'tenue'}>{error || 'Cargando…'}</p>
+
+  const { datos, copiaDe } = dia
+  const locales: Locales = new Map(guardadas.map((m) => [m.visita, m]))
+  const pendientes = guardadas.filter((m) => m.estado === 'pendiente')
+  const rechazadas = guardadas.filter((m) => m.estado === 'rechazada')
   const esHoy = datos.fecha === datos.hoy
-  const registradas = datos.visitas.filter((v) => v.estado === 'realizada').length
   const total = datos.visitas.length
+  const registradas = datos.visitas.filter((v) => registrada(v, locales)).length
 
   return (
     <section>
@@ -100,6 +135,26 @@ export default function MisVisitas({ sesion }: { sesion: Sesion }) {
         )}
       </p>
       {error && <p className="error">{error}</p>}
+      {copiaDe && <p className="aviso">Sin señal: se muestra la lista guardada en el celular a las {horaDe(copiaDe)}.</p>}
+
+      {pendientes.length > 0 && (
+        <div className="tarjeta estado alerta">
+          <strong>
+            {pendientes.length === 1
+              ? '1 mantención guardada en el celular, sin enviar'
+              : `${pendientes.length} mantenciones guardadas en el celular, sin enviar`}
+          </strong>
+          <span className="tenue">{enLinea ? 'Se están enviando.' : 'Se enviarán solas cuando vuelva la señal.'}</span>
+          {enLinea && <button onClick={() => sincronizar()}>Enviar ahora</button>}
+        </div>
+      )}
+      {rechazadas.map((m) => (
+        <div key={m.id_local} className="tarjeta estado detenido">
+          <strong>{m.titulo}: el servidor no aceptó la mantención</strong>
+          <span>{m.ultimo_error}</span>
+          <button onClick={() => quitar(m.id_local)}>Entendido</button>
+        </div>
+      ))}
 
       {total > 0 ? (
         <div className={`tarjeta estado ${registradas === total ? 'ok' : 'alerta'}`}>
@@ -119,15 +174,15 @@ export default function MisVisitas({ sesion }: { sesion: Sesion }) {
       )}
 
       {porEdificio(datos.visitas).map((vs) => (
-        <Edificio key={vs[0].edificio_id} visitas={vs} />
+        <Edificio key={vs[0].edificio_id} visitas={vs} hoy={datos.hoy} locales={locales} />
       ))}
 
       {esHoy && datos.atrasadas.length > 0 && (
         <>
-          <h2 className="separado">Atrasadas de este mes ({datos.atrasadas.length})</h2>
-          <p className="tenue">Visitas de días anteriores que siguen sin registrar.</p>
+          <h2 className="separado">Atrasadas de este mes ({datos.atrasadas.filter((v) => !registrada(v, locales)).length})</h2>
+          <p className="tenue">Visitas de días anteriores que siguen sin registrar. Todavía se pueden registrar.</p>
           {porEdificio(datos.atrasadas).map((vs) => (
-            <Edificio key={`${vs[0].fecha}/${vs[0].edificio_id}`} visitas={vs} conFecha />
+            <Edificio key={`${vs[0].fecha}/${vs[0].edificio_id}`} visitas={vs} hoy={datos.hoy} locales={locales} conFecha />
           ))}
         </>
       )}

@@ -110,6 +110,27 @@ label { display: block; margin-bottom: 12px; font-weight: 600; font-size: 0.95re
 .edificio h3 .tenue { font-weight: 400; }
 .edificio > p.tenue { margin: 0 2px 4px; }
 button.enlace { min-height: 0; padding: 0; border: none; background: none; color: var(--azul); text-decoration: underline; font-size: inherit; }
+button.enlace.volver { display: block; margin: 4px 0; text-decoration: none; }
+
+/* Checklist de mantención (H06) */
+a.boton {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 14px;
+  border-radius: 8px; border: 1px solid var(--borde); background: #fff; color: var(--texto); text-decoration: none;
+}
+a.boton.primario { background: var(--azul); border-color: var(--azul); color: #fff; font-weight: 600; }
+a.boton.grande { display: flex; width: 100%; min-height: 54px; font-size: 1.05rem; }
+a.etiqueta { text-decoration: none; padding: 6px 10px; }
+.aviso { background: var(--alerta-fondo); color: var(--alerta); padding: 10px 12px; border-radius: 8px; margin: 10px 0; }
+.tarjeta.detenido { border-left: 6px solid var(--peligro); }
+.tarjeta.detenido .lista li { margin-top: 10px; }
+.tarjeta p { margin: 6px 0; }
+.confirmacion strong:first-child { font-size: 1.1rem; }
+.punto.falta, label.falta { border-left: 4px solid var(--peligro); padding-left: 10px; }
+.punto .error, label .error { display: block; font-size: 0.9rem; margin: 4px 0 0; }
+.punto textarea { margin-top: 6px; }
+.sino { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.sino button.elegida { background: var(--azul); color: #fff; border-color: var(--azul); }
+.equipos { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
 
 .ingreso { max-width: 380px; padding-top: 12vh; text-align: center; }
 .ingreso form { text-align: left; }

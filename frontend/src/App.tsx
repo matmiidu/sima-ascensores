@@ -1,26 +1,51 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
-import { api, guardarSesion, guardarToken, sesionGuardada, token } from './api'
+import { SIN_SESION, api, guardarSesion, guardarToken, sesionGuardada, token } from './api'
 import type { Sesion } from './tipos'
 import { useEnLinea } from './useEnLinea'
+import { useEnvioAutomatico, useMantencionesLocales } from './useTerreno'
 import Calendario from './paginas/Calendario'
 import Cartera from './paginas/Cartera'
+import Checklist from './paginas/Checklist'
 import EdificioDetalle from './paginas/EdificioDetalle'
 import Ingreso from './paginas/Ingreso'
+import Mantencion from './paginas/Mantencion'
 import MisVisitas from './paginas/MisVisitas'
-import PruebaSinConexion from './paginas/PruebaSinConexion'
 
 export default function App() {
   const [conToken, setConToken] = useState(() => token() !== null)
   const [sesion, setSesion] = useState<Sesion | null>(sesionGuardada)
   const enLinea = useEnLinea()
+  const sinEnviar = useMantencionesLocales(sesion?.usuario).filter((m) => m.estado === 'pendiente').length
 
-  function salir() {
+  // Las mantenciones guardadas sin señal se envían solas mientras el técnico tenga la sesión abierta.
+  useEnvioAutomatico(conToken && !!sesion?.tecnico)
+
+  const cerrar = useCallback(() => {
     guardarToken(null)
     guardarSesion(null)
     setSesion(null)
     setConToken(false)
+  }, [])
+
+  function salir() {
+    if (
+      sinEnviar > 0 &&
+      !confirm(
+        `Tienes ${sinEnviar === 1 ? '1 mantención guardada' : `${sinEnviar} mantenciones guardadas`} en el celular sin enviar. ` +
+          'No se pierden: se enviarán cuando vuelvas a entrar con tu usuario en este celular. ¿Salir de todos modos?',
+      )
+    ) {
+      return
+    }
+    cerrar()
   }
+
+  // Si el servidor avisa que la sesión ya no vale, se pide ingresar de nuevo.
+  useEffect(() => {
+    window.addEventListener(SIN_SESION, cerrar)
+    return () => window.removeEventListener(SIN_SESION, cerrar)
+  }, [cerrar])
 
   // Al entrar se pregunta al servidor quién es el usuario: de eso depende si
   // ve la cartera y el calendario (jefe técnico) o sus visitas (técnico).
@@ -31,8 +56,8 @@ export default function App() {
         guardarSesion(s)
         setSesion(s)
       })
-      .catch((e) => {
-        if (e.estado === 401) salir()
+      .catch(() => {
+        /* sin señal se sigue con la copia guardada; si la sesión no vale, llega el aviso SIN_SESION */
       })
   }, [conToken])
 
@@ -57,7 +82,6 @@ export default function App() {
             <>
               <NavLink to="/cartera">Cartera</NavLink>
               <NavLink to="/calendario">Calendario</NavLink>
-              <NavLink to="/sin-conexion">Terreno</NavLink>
             </>
           )}
         </nav>
@@ -73,13 +97,18 @@ export default function App() {
           </p>
         ) : (
           <Routes>
-            {sesion.tecnico && <Route path="/mis-visitas" element={<MisVisitas sesion={sesion} />} />}
+            {sesion.tecnico && (
+              <>
+                <Route path="/mis-visitas" element={<MisVisitas sesion={sesion} />} />
+                <Route path="/mis-visitas/:id" element={<Checklist sesion={sesion} />} />
+              </>
+            )}
             {sesion.es_jefe && (
               <>
                 <Route path="/cartera" element={<Cartera />} />
                 <Route path="/cartera/:id" element={<EdificioDetalle />} />
                 <Route path="/calendario" element={<Calendario />} />
-                <Route path="/sin-conexion" element={<PruebaSinConexion />} />
+                <Route path="/mantenciones/:id" element={<Mantencion />} />
               </>
             )}
             <Route path="*" element={<Navigate to={inicio} replace />} />

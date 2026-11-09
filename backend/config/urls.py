@@ -7,7 +7,7 @@ from rest_framework.routers import DefaultRouter
 
 from cartera.views import AscensorViewSet, EdificioViewSet, TecnicoViewSet
 from planificacion.views import FeriadoViewSet, VisitaViewSet, generar, mis_visitas, resumen
-from terreno.views import ChecklistPruebaViewSet
+from terreno.views import ChecklistPruebaViewSet, PuntoChecklistViewSet, RegistroMantencionViewSet
 
 from .permisos import es_jefe, tecnico_de
 
@@ -18,6 +18,8 @@ router.register("ascensores", AscensorViewSet, basename="ascensor")
 router.register("visitas", VisitaViewSet, basename="visita")
 router.register("feriados", FeriadoViewSet, basename="feriado")
 router.register("poc/checklists", ChecklistPruebaViewSet, basename="checklist-prueba")
+router.register("puntos-checklist", PuntoChecklistViewSet, basename="punto-checklist")
+router.register("mantenciones", RegistroMantencionViewSet, basename="mantencion")
 
 
 @api_view(["GET"])

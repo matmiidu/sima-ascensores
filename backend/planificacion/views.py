@@ -38,7 +38,7 @@ class VisitaViewSet(viewsets.ModelViewSet):
     permission_classes = [LecturaOJefe]
 
     def get_queryset(self):
-        qs = Visita.objects.select_related("ascensor", "ascensor__edificio", "tecnico")
+        qs = Visita.objects.select_related("ascensor", "ascensor__edificio", "tecnico", "registro")
         if "mes" in self.request.query_params:
             anio, mes = _mes_param(self.request)
             qs = qs.filter(mes=date(anio, mes, 1))
@@ -92,6 +92,7 @@ def resumen(request):
     ultima = GeneracionCalendario.objects.filter(mes=inicio).first()
     return Response({
         **cobertura(anio, mes),
+        "realizadas": Visita.objects.filter(mes=inicio, estado=Visita.Estado.REALIZADA).count(),
         "dias_habiles": [d.isoformat() for d in dias_habiles(anio, mes)],
         "carga": list(carga.values()),
         "ultima_generacion": GeneracionSerializer(ultima).data if ultima else None,
@@ -128,7 +129,7 @@ def mis_visitas(request):
 
     suyas = (
         Visita.objects.filter(tecnico=tecnico)
-        .select_related("ascensor", "ascensor__edificio", "tecnico")
+        .select_related("ascensor", "ascensor__edificio", "tecnico", "registro")
         .order_by("fecha", "ascensor__edificio__comuna", "ascensor__edificio__nombre", "ascensor__edificio_id",
                   "ascensor__identificador")
     )

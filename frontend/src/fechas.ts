@@ -27,3 +27,13 @@ export const sumarDias = (iso: string, dias: number) => {
 }
 
 export const mayuscula = (texto: string) => texto.charAt(0).toUpperCase() + texto.slice(1)
+
+/** Día de hoy según el reloj del celular, como AAAA-MM-DD. */
+export const hoyLocal = () => aIso(new Date())
+
+// Los momentos (fecha y hora) vienen en hora universal; se muestran en la hora del celular.
+export const fechaDe = (momento: string) => aIso(new Date(momento))
+export const horaDe = (momento: string) => {
+  const d = new Date(momento)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}

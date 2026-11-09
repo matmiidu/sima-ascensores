@@ -1,19 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api, enviar } from '../api'
-import { diaLargo, nombreMes } from '../fechas'
-import type { Resumen, Tecnico, Visita } from '../tipos'
+import { diaLargo, fechaCorta, fechaDe, horaDe, nombreMes } from '../fechas'
+import type { RegistroMantencion, Resumen, Tecnico, Visita } from '../tipos'
 
-function mesSiguiente() {
+// Se abre en el mes en curso, que es el que el jefe técnico va siguiendo; para
+// planificar el próximo basta avanzar un mes.
+function mesActual() {
   const d = new Date()
-  d.setDate(1)
-  d.setMonth(d.getMonth() + 1)
   return { anio: d.getFullYear(), mes: d.getMonth() + 1 }
 }
 
 export default function Calendario() {
-  const [{ anio, mes }, setPeriodo] = useState(mesSiguiente)
+  const [{ anio, mes }, setPeriodo] = useState(mesActual)
   const [visitas, setVisitas] = useState<Visita[] | null>(null)
   const [resumen, setResumen] = useState<Resumen | null>(null)
+  const [detenidos, setDetenidos] = useState<RegistroMantencion[]>([])
   const [tecnicos, setTecnicos] = useState<Tecnico[]>([])
   const [tecnico, setTecnico] = useState('')
   const [generando, setGenerando] = useState(false)
@@ -25,12 +27,14 @@ export default function Calendario() {
   const cargar = useCallback(async () => {
     setError('')
     try {
-      const [v, r] = await Promise.all([
+      const [v, r, d] = await Promise.all([
         api<Visita[]>(`visitas/?mes=${clave}`),
         api<Resumen>(`calendario/resumen/?mes=${clave}`),
+        api<RegistroMantencion[]>(`mantenciones/?mes=${clave}&detenidos=1`),
       ])
       setVisitas(v)
       setResumen(r)
+      setDetenidos(d)
     } catch (e) {
       setError((e as Error).message)
     }
@@ -99,6 +103,11 @@ export default function Calendario() {
             {resumen.con_visita} de {resumen.equipos_activos} equipos con visita
           </strong>
           <span className="tenue">{resumen.dias_habiles.length} días hábiles en el mes</span>
+          {resumen.con_visita > 0 && (
+            <span>
+              {resumen.realizadas} de {resumen.con_visita} visitas realizadas
+            </span>
+          )}
           {resumen.sin_visita.length > 0 && resumen.con_visita > 0 && (
             <details>
               <summary>{resumen.sin_visita.length} sin visita</summary>
@@ -122,6 +131,29 @@ export default function Calendario() {
         </div>
       )}
       {error && <p className="error">{error}</p>}
+
+      {detenidos.length > 0 && (
+        <div className="tarjeta detenido">
+          <strong>
+            {detenidos.length === 1 ? '1 equipo quedó detenido' : `${detenidos.length} equipos quedaron detenidos`}
+          </strong>
+          <span className="tenue">Falta programar su visita correctiva.</span>
+          <ul className="lista">
+            {detenidos.map((d) => (
+              <li key={d.id}>
+                <Link to={`/mantenciones/${d.id}`}>
+                  {d.edificio_nombre} · {d.ascensor_identificador}
+                </Link>
+                <span className="tenue">
+                  {' '}{fechaCorta(fechaDe(d.guardado_en_dispositivo))} a las {horaDe(d.guardado_en_dispositivo)}, {d.tecnico_nombre}
+                </span>
+                <br />
+                Falla: {d.falla_descripcion}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {resumen && resumen.carga.length > 0 && (
         <details className="tarjeta">
@@ -165,7 +197,22 @@ export default function Calendario() {
                 <div>
                   <strong>{vs[0].edificio_nombre}</strong>
                   <span className="tenue">{vs[0].direccion}, {vs[0].comuna}</span>
-                  <span className="tenue">{vs.map((v) => v.ascensor_identificador).join(', ')}</span>
+                  <span className="equipos">
+                    {vs.map((v) =>
+                      v.registro ? (
+                        <Link
+                          key={v.id}
+                          to={`/mantenciones/${v.registro.id}`}
+                          className={`etiqueta ${v.registro.operativo ? 'ok' : 'peligro'}`}
+                          title={v.registro.operativo ? 'Mantención realizada' : 'El equipo quedó detenido'}
+                        >
+                          {v.ascensor_identificador} {v.registro.operativo ? 'realizada' : 'detenido'}
+                        </Link>
+                      ) : (
+                        <span key={v.id} className="etiqueta">{v.ascensor_identificador}</span>
+                      ),
+                    )}
+                  </span>
                 </div>
                 <span className="tenue derecha">{vs[0].tecnico_nombre}</span>
               </li>

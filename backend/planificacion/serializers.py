@@ -3,6 +3,19 @@ from rest_framework import serializers
 from .models import Feriado, GeneracionCalendario, Visita
 
 
+def resumen_del_registro(visita):
+    """Lo esencial de la mantención registrada en una visita (H06), o None si todavía no se hizo."""
+    registro = getattr(visita, "registro", None)
+    if registro is None:
+        return None
+    return {
+        "id": registro.id,
+        "codigo": registro.codigo,
+        "operativo": registro.operativo,
+        "guardado_en_dispositivo": registro.guardado_en_dispositivo,
+    }
+
+
 class VisitaSerializer(serializers.ModelSerializer):
     ascensor_identificador = serializers.CharField(source="ascensor.identificador", read_only=True)
     edificio_id = serializers.IntegerField(source="ascensor.edificio_id", read_only=True)
@@ -10,14 +23,18 @@ class VisitaSerializer(serializers.ModelSerializer):
     direccion = serializers.CharField(source="ascensor.edificio.direccion", read_only=True)
     comuna = serializers.CharField(source="ascensor.edificio.comuna", read_only=True)
     tecnico_nombre = serializers.CharField(source="tecnico.nombre", read_only=True)
+    registro = serializers.SerializerMethodField()
 
     class Meta:
         model = Visita
         fields = [
             "id", "ascensor", "ascensor_identificador", "edificio_id", "edificio_nombre", "direccion", "comuna",
-            "tecnico", "tecnico_nombre", "mes", "fecha", "estado",
+            "tecnico", "tecnico_nombre", "mes", "fecha", "estado", "registro",
         ]
         read_only_fields = ["mes"]
+
+    def get_registro(self, obj):
+        return resumen_del_registro(obj)
 
     def validate(self, datos):
         fecha = datos.get("fecha", getattr(self.instance, "fecha", None))
@@ -46,15 +63,19 @@ class VisitaDelDiaSerializer(serializers.ModelSerializer):
     administrador_nombre = serializers.CharField(source="ascensor.edificio.administrador_nombre", read_only=True)
     administrador_telefono = serializers.CharField(source="ascensor.edificio.administrador_telefono", read_only=True)
     tecnico_nombre = serializers.CharField(source="tecnico.nombre", read_only=True)
+    registro = serializers.SerializerMethodField()
 
     class Meta:
         model = Visita
         fields = [
             "id", "fecha", "mes", "estado", "ascensor", "ascensor_identificador", "marca", "paradas", "tipo_display",
             "edificio_id", "edificio_nombre", "direccion", "comuna", "administrador_nombre", "administrador_telefono",
-            "tecnico", "tecnico_nombre",
+            "tecnico", "tecnico_nombre", "registro",
         ]
         read_only_fields = fields
+
+    def get_registro(self, obj):
+        return resumen_del_registro(obj)
 
 
 class GenerarSerializer(serializers.Serializer):

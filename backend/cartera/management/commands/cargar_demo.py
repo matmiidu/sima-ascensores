@@ -19,6 +19,7 @@ from django.db import transaction
 from cartera.models import Ascensor, Edificio, Tecnico
 from cartera.usuarios import crear_usuarios_tecnicos
 from planificacion.models import GeneracionCalendario
+from terreno.models import RegistroMantencion
 
 CLAVE_DEMO = "sima"
 
@@ -74,7 +75,9 @@ class Command(BaseCommand):
                                   f"(clave {CLAVE_DEMO}).")
             return
         if borrar:
-            # Al borrar los ascensores se van también sus visitas del calendario.
+            # Primero las mantenciones registradas, que protegen a su visita; al
+            # borrar los ascensores se van también sus visitas del calendario.
+            RegistroMantencion.objects.all().delete()
             Ascensor.objects.all().delete()
             Edificio.objects.all().delete()
             GeneracionCalendario.objects.all().delete()

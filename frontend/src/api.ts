@@ -6,6 +6,9 @@ import type { Sesion } from './tipos'
 const CLAVE_TOKEN = 'sima.token'
 const CLAVE_SESION = 'sima.sesion'
 
+/** Evento que se emite cuando el servidor responde que la sesión ya no vale. */
+export const SIN_SESION = 'sima:sin-sesion'
+
 export class ErrorApi extends Error {
   estado: number
   datos: unknown
@@ -74,9 +77,18 @@ export async function api<T>(ruta: string, opciones: RequestInit = {}): Promise<
     },
   })
   const texto = await res.text()
-  const datos = texto ? JSON.parse(texto) : null
+  let datos: unknown = null
+  try {
+    datos = texto ? JSON.parse(texto) : null
+  } catch {
+    /* respuesta que no es de la API (por ejemplo, el servidor caído): vale el código de estado */
+  }
   if (!res.ok) {
-    if (res.status === 401) guardarToken(null)
+    if (res.status === 401) {
+      // La sesión ya no vale: se pide ingresar de nuevo. Lo guardado en el celular no se toca.
+      guardarToken(null)
+      window.dispatchEvent(new Event(SIN_SESION))
+    }
     throw new ErrorApi(res.status, datos)
   }
   return datos as T

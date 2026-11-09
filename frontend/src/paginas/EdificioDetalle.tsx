@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api, enviar } from '../api'
-import { TIPOS_ASCENSOR, USOS_ASCENSOR, type Edificio } from '../tipos'
-import { fechaCorta } from '../fechas'
+import { TIPOS_ASCENSOR, USOS_ASCENSOR, type Edificio, type RegistroMantencion } from '../tipos'
+import { fechaCorta, fechaDe, horaDe } from '../fechas'
 
 const VACIO = {
   identificador: '',
@@ -26,11 +26,13 @@ function estadoCertificacion(vence: string | null) {
 export default function EdificioDetalle() {
   const { id } = useParams()
   const [edificio, setEdificio] = useState<Edificio | null>(null)
+  const [mantenciones, setMantenciones] = useState<RegistroMantencion[]>([])
   const [formulario, setFormulario] = useState<typeof VACIO | null>(null)
   const [error, setError] = useState('')
 
   const cargar = useCallback(() => {
     api<Edificio>(`edificios/${id}/`).then(setEdificio).catch((e) => setError(e.message))
+    api<RegistroMantencion[]>(`mantenciones/?edificio=${id}`).then(setMantenciones).catch(() => {})
   }, [id])
 
   useEffect(cargar, [cargar])
@@ -155,6 +157,29 @@ export default function EdificioDetalle() {
         })}
         {edificio.ascensores.length === 0 && <li className="tenue">Este edificio todavía no tiene ascensores.</li>}
       </ul>
+
+      {mantenciones.length > 0 && (
+        <>
+          <h2 className="separado">Mantenciones registradas ({mantenciones.length})</h2>
+          <ul className="lista">
+            {mantenciones.map((m) => (
+              <li key={m.id}>
+                <Link to={`/mantenciones/${m.id}`} className="fila">
+                  <div>
+                    <strong>
+                      {m.ascensor_identificador} · {m.codigo}
+                    </strong>
+                    <span className="tenue">
+                      {fechaCorta(fechaDe(m.guardado_en_dispositivo))} a las {horaDe(m.guardado_en_dispositivo)}, {m.tecnico_nombre}
+                    </span>
+                  </div>
+                  <span className={`etiqueta ${m.operativo ? 'ok' : 'peligro'}`}>{m.operativo ? 'Operativo' : 'Detenido'}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </section>
   )
 }
