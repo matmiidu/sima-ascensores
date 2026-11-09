@@ -100,3 +100,13 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = [
     o for o in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",") if o
 ]
+
+# El panel /admin se abre a través de Vite (5173 en desarrollo, 4173 con npm run preview), que reenvía al
+# puerto 8000. Django compara el origen del formulario con el del servidor; sin esto rechaza el inicio de
+# sesión con "Origin checking failed".
+CSRF_TRUSTED_ORIGINS = [
+    o for o in os.environ.get(
+        "CSRF_TRUSTED_ORIGINS",
+        "http://localhost:4173,http://127.0.0.1:4173,http://localhost:5173,http://127.0.0.1:5173",
+    ).split(",") if o
+]

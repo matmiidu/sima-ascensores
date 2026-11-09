@@ -115,11 +115,11 @@ class Command(BaseCommand):
 
         User = get_user_model()
         if not User.objects.filter(username="jefe").exists():
-            jefe = User.objects.create_superuser("jefe", "jefe@ejemplo.cl", "sima-demo-2026")
+            jefe = User.objects.create_superuser("jefe", "jefe@ejemplo.cl", "sima")
             jefe.first_name, jefe.last_name = "Jefe", "Técnico"
             jefe.save()
 
         self.stdout.write(self.style.SUCCESS(
             f"Cargados {Tecnico.objects.count()} técnicos, {Edificio.objects.count()} edificios "
-            f"y {Ascensor.objects.count()} ascensores. Usuario de prueba: jefe / sima-demo-2026"
+            f"y {Ascensor.objects.count()} ascensores. Usuario de prueba: jefe / sima"
         ))

@@ -23,7 +23,7 @@ cd backend
 python -m venv .venv
 .venv/Scripts/pip install -r requirements.txt      # en Linux/Mac: .venv/bin/pip
 .venv/Scripts/python manage.py migrate
-.venv/Scripts/python manage.py cargar_demo          # cartera ficticia; usuario jefe / sima-demo-2026
+.venv/Scripts/python manage.py cargar_demo          # cartera ficticia; usuario jefe / sima
 .venv/Scripts/python manage.py runserver
 ```
 
