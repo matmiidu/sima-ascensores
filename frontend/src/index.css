@@ -122,6 +122,7 @@ a.boton.grande { display: flex; width: 100%; min-height: 54px; font-size: 1.05re
 a.etiqueta { text-decoration: none; padding: 6px 10px; }
 .aviso { background: var(--alerta-fondo); color: var(--alerta); padding: 10px 12px; border-radius: 8px; margin: 10px 0; }
 .tarjeta.detenido { border-left: 6px solid var(--peligro); }
+.tarjeta.detenido > strong, .tarjeta.detenido > .tenue { display: block; }
 .tarjeta.detenido .lista li { margin-top: 10px; }
 .tarjeta p { margin: 6px 0; }
 .confirmacion strong:first-child { font-size: 1.1rem; }

@@ -3,7 +3,10 @@ from datetime import date, datetime, timedelta
 from datetime import timezone as zona
 from unittest import mock
 
+from io import StringIO
+
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
@@ -276,3 +279,22 @@ class EnvioSinConexionTests(ConVisitaDeHoy):
         self.assertEqual(RegistroMantencion.objects.count(), 10)
         self.assertEqual(len(set(RegistroMantencion.objects.values_list("id_local", flat=True))), 10)
         self.assertEqual(Visita.objects.filter(estado=Visita.Estado.REALIZADA).count(), 10)
+
+
+class ReinicioDeLaDemostracionTests(APITestCase):
+    def test_recargar_la_cartera_borra_tambien_las_mantenciones(self):
+        """Las mantenciones protegen a su visita; recargar la demostración igual deja todo limpio."""
+        call_command("cargar_demo", stdout=StringIO())
+        tecnico = Tecnico.objects.get(usuario__username="luis")
+        hoy = timezone.localdate()
+        ascensor = Ascensor.objects.filter(edificio__tecnico_asignado=tecnico).first()
+        visita = Visita.objects.create(ascensor=ascensor, tecnico=tecnico, mes=hoy.replace(day=1), fecha=hoy)
+        self.client.force_authenticate(tecnico.usuario)
+        puntos = PuntoChecklist.objects.filter(activo=True)
+        r = self.client.post("/api/mantenciones/", {"visita": visita.id, "operativo": True,
+                             "respuestas": [{"punto": p.id, "resultado": "bien"} for p in puntos]}, format="json")
+        self.assertEqual(r.status_code, 201, r.data)
+        call_command("cargar_demo", borrar=True, stdout=StringIO())
+        self.assertEqual((RegistroMantencion.objects.count(), Visita.objects.count()), (0, 0))
+        self.assertEqual(Ascensor.objects.count(), 140)
+        self.assertEqual(PuntoChecklist.objects.count(), 8)
