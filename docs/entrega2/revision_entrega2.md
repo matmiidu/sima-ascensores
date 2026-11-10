@@ -11,16 +11,17 @@
 |---|---|---|---|---|
 | H04 | Ver mis visitas del día | 2 | En revisión | `criterios_aceptacion.md`, capturas 01, 02 y 08 |
 | H06 | Completar el checklist en el celular | 5 | En revisión | `criterios_aceptacion.md`, capturas 03 a 12 |
-| RF-02 | Registrar el checklist de la visita (versión 3) | en H06 | En revisión | Cuatro criterios con prueba automática y captura |
-| RF-03 | Exigir la descripción de la falla | 1 (D12) | En revisión | Dos criterios con prueba automática y captura |
-| RNF-01 | Confiabilidad sin conexión del checklist | en H06 | En revisión | `RNF01_resultado.md`, capturas rnf01_01 a rnf01_04 |
+| RF-02 | Registrar el checklist de la visita (versión 3) | en H06 | Se revisa con H06 | Cuatro criterios con prueba automática y captura |
+| RF-03 | Exigir la descripción de la falla | 1 (D12) | Se revisa con H06 | Dos criterios con prueba automática y captura |
+| RNF-01 | Confiabilidad sin conexión del checklist | en H06 | Se revisa con H06 | `RNF01_resultado.md`, capturas rnf01_01 a rnf01_04 |
 | A02 | Sesión de prueba del checklist con dos técnicos | 2 h | En revisión | `a02/acta_A02.md` (**simulación**) |
 
 Puntos construidos: **8 de 8** (H04, H06 y RF-03). 56 pruebas automáticas aprobadas: 12 de la cartera y los
 usuarios, 23 del calendario y las visitas del día, y 21 del registro en terreno.
 
-Pasan a **Terminado** cuando se muestren en la revisión del viernes 13 de noviembre, como pide el criterio
-de término. En este caso ficticio la revisión con el jefe técnico y los técnicos se registra como simulación.
+H04, H06 y A02 pasan a **Terminado** cuando se muestren en la revisión del viernes 13 de noviembre, como pide el
+criterio de término. Las tarjetas de los requisitos (SIMA-33, SIMA-34 y SIMA-35) ya estaban Terminadas porque su
+análisis está cerrado; su ficha se actualizó con el resultado de la verificación. En este caso ficticio la revisión con el jefe técnico y los técnicos se registra como simulación.
 
 ## Demostración sugerida (5 minutos)
 
@@ -60,7 +61,7 @@ Si el técnico elegido no tiene visitas hoy, igual puede registrar las atrasadas
 
 | | |
 |---|---|
-| Pendiente | Revisión del viernes 13 de noviembre para pasar H04, H06, A02 y los requisitos a Terminado. Prueba de RNF-01 en un celular real, que requiere publicar con HTTPS. |
+| Pendiente | Revisión del viernes 13 de noviembre para pasar H04, H06 y A02 a Terminado. Prueba de RNF-01 en un celular real, que requiere publicar con HTTPS. |
 | Bloqueado | Nada. H09 queda desbloqueada por H06, y antes de construirla va A05. |
 | En el backlog | Elegir la comuna de una lista (D13). |
 | Próxima acción | Entrega 3 (16 – 29 de noviembre): A05, revisar el formato del informe contra la OGUC; luego H09 y H10. |
