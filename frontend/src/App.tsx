@@ -82,6 +82,10 @@ export default function App() {
             <>
               <NavLink to="/cartera">Cartera</NavLink>
               <NavLink to="/calendario">Calendario</NavLink>
+              {/* Panel de administración de Django: página aparte, con su propio ingreso. */}
+              <a href="/admin/" target="_blank" rel="noopener" title="Panel de administración (se abre en otra pestaña)">
+                Panel
+              </a>
             </>
           )}
         </nav>
