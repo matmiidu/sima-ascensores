@@ -11,6 +11,7 @@ import EdificioDetalle from './paginas/EdificioDetalle'
 import Ingreso from './paginas/Ingreso'
 import Mantencion from './paginas/Mantencion'
 import MisVisitas from './paginas/MisVisitas'
+import Registros from './paginas/Registros'
 
 export default function App() {
   const [conToken, setConToken] = useState(() => token() !== null)
@@ -82,6 +83,7 @@ export default function App() {
             <>
               <NavLink to="/cartera">Cartera</NavLink>
               <NavLink to="/calendario">Calendario</NavLink>
+              <NavLink to="/checklists">Checklists</NavLink>
               {/* Panel de administración de Django: página aparte, con su propio ingreso. */}
               <a href="/admin/" target="_blank" rel="noopener" title="Panel de administración (se abre en otra pestaña)">
                 Panel
@@ -112,6 +114,7 @@ export default function App() {
                 <Route path="/cartera" element={<Cartera />} />
                 <Route path="/cartera/:id" element={<EdificioDetalle />} />
                 <Route path="/calendario" element={<Calendario />} />
+                <Route path="/checklists" element={<Registros />} />
                 <Route path="/mantenciones/:id" element={<Mantencion />} />
               </>
             )}
