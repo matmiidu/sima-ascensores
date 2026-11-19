@@ -3,24 +3,24 @@
 **Período:** 2 – 15 de noviembre de 2026.
 **Entregable comprometido:** el técnico ve sus visitas y completa el checklist en el celular.
 **Capacidad supuesta:** 8 puntos por entrega.
-**Estado al 10 de noviembre:** construida; falta la revisión del viernes 13.
+**Estado al 19 de noviembre:** revisada y cerrada. H04, H06 y A02 están en Terminado en JIRA.
 
 ## Qué se entrega
 
 | ID | Elemento | Puntos | Estado en JIRA | Evidencia |
 |---|---|---|---|---|
-| H04 | Ver mis visitas del día | 2 | En revisión | `criterios_aceptacion.md`, capturas 01, 02 y 08 |
-| H06 | Completar el checklist en el celular | 5 | En revisión | `criterios_aceptacion.md`, capturas 03 a 12 |
-| RF-02 | Registrar el checklist de la visita (versión 3) | en H06 | Se revisa con H06 | Cuatro criterios con prueba automática y captura |
-| RF-03 | Exigir la descripción de la falla | 1 (D12) | Se revisa con H06 | Dos criterios con prueba automática y captura |
-| RNF-01 | Confiabilidad sin conexión del checklist | en H06 | Se revisa con H06 | `RNF01_resultado.md`, capturas rnf01_01 a rnf01_04 |
-| A02 | Sesión de prueba del checklist con dos técnicos | 2 h | En revisión | `a02/acta_A02.md` (**simulación**) |
+| H04 | Ver mis visitas del día | 2 | Terminado | `criterios_aceptacion.md`, capturas 01, 02 y 08 |
+| H06 | Completar el checklist en el celular | 5 | Terminado | `criterios_aceptacion.md`, capturas 03 a 12 |
+| RF-02 | Registrar el checklist de la visita (versión 3) | en H06 | Terminado, verificado con H06 | Cuatro criterios con prueba automática y captura |
+| RF-03 | Exigir la descripción de la falla | 1 (D12) | Terminado, verificado con H06 | Dos criterios con prueba automática y captura |
+| RNF-01 | Confiabilidad sin conexión del checklist | en H06 | Terminado, verificado con H06 | `RNF01_resultado.md`, capturas rnf01_01 a rnf01_04 |
+| A02 | Sesión de prueba del checklist con dos técnicos | 2 h | Terminado | `a02/acta_A02.md` (**simulación**) |
 
 Puntos construidos: **8 de 8** (H04, H06 y RF-03). 56 pruebas automáticas aprobadas: 12 de la cartera y los
 usuarios, 23 del calendario y las visitas del día, y 21 del registro en terreno.
 
-H04, H06 y A02 pasan a **Terminado** cuando se muestren en la revisión del viernes 13 de noviembre, como pide el
-criterio de término. Las tarjetas de los requisitos (SIMA-33, SIMA-34 y SIMA-35) ya estaban Terminadas porque su
+H04, H06 y A02 pasaron a **Terminado** después de la revisión de la entrega, como pide el criterio de término
+(ver "Resultado de la revisión"). Las tarjetas de los requisitos (SIMA-33, SIMA-34 y SIMA-35) ya estaban Terminadas porque su
 análisis está cerrado; su ficha se actualizó con el resultado de la verificación. En este caso ficticio la revisión con el jefe técnico y los técnicos se registra como simulación.
 
 ## Demostración sugerida (5 minutos)
@@ -42,6 +42,17 @@ Antes: `cargar_demo --borrar` y abrir la aplicación. Todos los usuarios tienen 
 
 Si el técnico elegido no tiene visitas hoy, igual puede registrar las atrasadas, o se elige otro técnico.
 
+## Resultado de la revisión
+
+Registrada el 19 de noviembre de 2026. Como en la Entrega 1, la aceptación del jefe técnico es **simulación**.
+
+- Se recorrió la demostración sugerida completa (pasos 1 a 7) y cada paso dio el resultado esperado.
+- Las 56 pruebas automáticas se volvieron a correr el 19 de noviembre: todas aprobadas.
+- H04, H06 y A02 cumplen su criterio de término y pasaron a Terminado en JIRA, con un comentario de la revisión.
+- La página de Confluence quedó en la versión 8: requisitos y prototipos de la Entrega 2 marcados como Terminados
+  y una fila nueva en el registro de cambios.
+- No se agregó alcance a la entrega. La prueba de RNF-01 en un celular real sigue pendiente.
+
 ## Qué se aprendió y cambia el plan
 
 - **Capacidad:** cupieron los 8 puntos, con RF-03 en el punto libre. Se mantiene 8 para la Entrega 3
@@ -61,7 +72,7 @@ Si el técnico elegido no tiene visitas hoy, igual puede registrar las atrasadas
 
 | | |
 |---|---|
-| Pendiente | Revisión del viernes 13 de noviembre para pasar H04, H06 y A02 a Terminado. Prueba de RNF-01 en un celular real, que requiere publicar con HTTPS. |
+| Pendiente | Prueba de RNF-01 en un celular real, que requiere publicar con HTTPS. |
 | Bloqueado | Nada. H09 queda desbloqueada por H06, y antes de construirla va A05. |
 | En el backlog | Elegir la comuna de una lista (D13). |
 | Próxima acción | Entrega 3 (16 – 29 de noviembre): A05, revisar el formato del informe contra la OGUC; luego H09 y H10. |
