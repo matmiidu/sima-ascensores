@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import include, path
-from rest_framework.authtoken.views import obtain_auth_token
+from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.routers import DefaultRouter
@@ -10,6 +10,14 @@ from planificacion.views import FeriadoViewSet, VisitaViewSet, generar, mis_visi
 from terreno.views import ChecklistPruebaViewSet, PuntoChecklistViewSet, RegistroMantencionViewSet
 
 from .permisos import es_jefe, tecnico_de
+
+
+class IngresoConToken(ObtainAuthToken):
+    # El ingreso a la aplicación no mira la sesión del panel de administración:
+    # si el navegador ya entró al panel, DRF exigía el código CSRF y el ingreso
+    # fallaba con 403 aunque el usuario y la clave estuvieran bien.
+    authentication_classes = []
+
 
 router = DefaultRouter()
 router.register("tecnicos", TecnicoViewSet, basename="tecnico")
@@ -40,7 +48,7 @@ admin.site.site_title = "SIMA"
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/token/", obtain_auth_token),
+    path("api/token/", IngresoConToken.as_view()),
     path("api/yo/", yo),
     path("api/calendario/generar/", generar),
     path("api/calendario/resumen/", resumen),

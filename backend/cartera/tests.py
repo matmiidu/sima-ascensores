@@ -114,6 +114,18 @@ class UsuariosYPermisosTests(APITestCase):
         self.assertTrue(r.data["es_jefe"])
         self.assertIsNone(r.data["tecnico"])
 
+    def test_se_entra_a_la_aplicacion_despues_de_entrar_al_panel(self):
+        # El navegador queda con la sesión del panel; el ingreso con usuario y
+        # clave no debe pedir el código CSRF por eso (antes daba 403).
+        from rest_framework.test import APIClient
+        navegador = APIClient(enforce_csrf_checks=True)
+        navegador.force_login(self.jefe)
+        r = navegador.post("/api/token/", {"username": "jefe", "password": "x"}, format="json")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("token", r.data)
+        r = navegador.post("/api/token/", {"username": "jefe", "password": "mala"}, format="json")
+        self.assertEqual(r.status_code, 400)
+
     def test_un_tecnico_consulta_la_cartera_pero_no_la_modifica(self):
         self.client.force_authenticate(self.tecnico.usuario)
         self.assertEqual(self.client.get("/api/edificios/").status_code, 200)
