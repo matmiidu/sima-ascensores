@@ -6,6 +6,7 @@ import { useEnLinea } from './useEnLinea'
 import { useEnvioAutomatico, useMantencionesLocales } from './useTerreno'
 import Calendario from './paginas/Calendario'
 import Cartera from './paginas/Cartera'
+import Certificaciones from './paginas/Certificaciones'
 import Checklist from './paginas/Checklist'
 import EdificioDetalle from './paginas/EdificioDetalle'
 import Ingreso from './paginas/Ingreso'
@@ -84,6 +85,7 @@ export default function App() {
               <NavLink to="/cartera">Cartera</NavLink>
               <NavLink to="/calendario">Calendario</NavLink>
               <NavLink to="/checklists">Checklists</NavLink>
+              <NavLink to="/certificaciones">Certificaciones</NavLink>
               {/* Panel de administración de Django: página aparte, con su propio ingreso. */}
               <a href="/admin/" target="_blank" rel="noopener" title="Panel de administración (se abre en otra pestaña)">
                 Panel
@@ -115,6 +117,7 @@ export default function App() {
                 <Route path="/cartera/:id" element={<EdificioDetalle />} />
                 <Route path="/calendario" element={<Calendario />} />
                 <Route path="/checklists" element={<Registros />} />
+                <Route path="/certificaciones" element={<Certificaciones />} />
                 <Route path="/mantenciones/:id" element={<Mantencion />} />
               </>
             )}

@@ -177,3 +177,23 @@ export interface Resumen {
     advertencias: string[]
   } | null
 }
+
+export interface AlertaCertificacion {
+  ascensor_id: number
+  identificador: string
+  edificio_id: number
+  edificio: string
+  direccion: string
+  comuna: string
+  vencimiento: string | null
+  dias_restantes: number | null
+  administrador: { nombre: string; correo: string; telefono: string }
+}
+
+export interface Certificaciones {
+  hoy: string
+  dias: number
+  vencidas: AlertaCertificacion[]
+  por_vencer: AlertaCertificacion[]
+  sin_fecha: AlertaCertificacion[]
+}

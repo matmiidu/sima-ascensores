@@ -134,3 +134,74 @@ class UsuariosYPermisosTests(APITestCase):
         self.assertEqual(r.status_code, 403)
         self.assertIn("Solo el jefe técnico", r.data["detail"])
         self.assertEqual(Edificio.objects.count(), 0)
+
+
+class AlertasCertificacionTests(APITestCase):
+    """Criterios de aceptación de H10 (RF-06)."""
+
+    def setUp(self):
+        from datetime import timedelta
+        from django.utils import timezone
+
+        User = get_user_model()
+        self.jefe = User.objects.create_user("jefe", password="x", is_staff=True)
+        self.tecnico = Tecnico.objects.create(nombre="Luis Muñoz", usuario=User.objects.create_user("luis", password="x"))
+        self.hoy = timezone.localdate()
+        d = lambda n: self.hoy + timedelta(days=n)  # noqa: E731
+        self.plaza = Edificio.objects.create(
+            nombre="Edificio Plaza", direccion="Lira 157", comuna="Santiago", tipo_uso="residencial",
+            administrador_nombre="Patricia Fuentes", administrador_correo="pfuentes@ejemplo.cl",
+            administrador_telefono="+56 2 2598 2203")
+        self.palmas = Edificio.objects.create(nombre="Edificio Las Palmas", direccion="Av. Grecia 1450", comuna="Ñuñoa",
+                                              tipo_uso="oficinas")
+        Ascensor.objects.create(edificio=self.plaza, identificador="A1", tipo="electrico", vencimiento_certificacion=d(16))
+        Ascensor.objects.create(edificio=self.plaza, identificador="A2", tipo="electrico", vencimiento_certificacion=d(-22))
+        Ascensor.objects.create(edificio=self.plaza, identificador="A3", tipo="electrico", vencimiento_certificacion=d(200))
+        Ascensor.objects.create(edificio=self.palmas, identificador="A1", tipo="electrico", vencimiento_certificacion=d(0))
+        Ascensor.objects.create(edificio=self.palmas, identificador="A2", tipo="electrico", vencimiento_certificacion=None)
+        Ascensor.objects.create(edificio=self.palmas, identificador="A3", tipo="electrico", vencimiento_certificacion=d(-5),
+                                activo=False)
+
+    def pedir(self, consulta=""):
+        self.client.force_authenticate(self.jefe)
+        return self.client.get(f"/api/certificaciones/{consulta}")
+
+    def test_separa_vencidas_por_vencer_y_sin_fecha(self):
+        r = self.pedir()
+        self.assertEqual(r.status_code, 200)
+        nombres = lambda lista: [f"{x['edificio']} {x['identificador']}" for x in lista]  # noqa: E731
+        self.assertEqual(nombres(r.data["vencidas"]), ["Edificio Plaza A2"])
+        # Ordenadas por fecha: la que vence hoy va antes que la de dentro de 16 días.
+        self.assertEqual(nombres(r.data["por_vencer"]), ["Edificio Las Palmas A1", "Edificio Plaza A1"])
+        self.assertEqual(nombres(r.data["sin_fecha"]), ["Edificio Las Palmas A2"])
+        self.assertEqual(r.data["por_vencer"][1]["dias_restantes"], 16)
+        self.assertEqual(r.data["vencidas"][0]["dias_restantes"], -22)
+
+    def test_no_avisa_las_vigentes_mas_alla_del_plazo_ni_los_equipos_inactivos(self):
+        r = self.pedir()
+        todos = r.data["vencidas"] + r.data["por_vencer"] + r.data["sin_fecha"]
+        self.assertNotIn(("Edificio Plaza", "A3"), [(x["edificio"], x["identificador"]) for x in todos])
+        self.assertNotIn(("Edificio Las Palmas", "A3"), [(x["edificio"], x["identificador"]) for x in todos])
+        self.palmas.activo = False
+        self.palmas.save()
+        r = self.pedir()
+        self.assertEqual([x["edificio"] for x in r.data["por_vencer"]], ["Edificio Plaza"])
+
+    def test_cada_alerta_trae_el_contacto_del_administrador(self):
+        alerta = self.pedir().data["por_vencer"][1]
+        self.assertEqual(alerta["administrador"], {"nombre": "Patricia Fuentes", "correo": "pfuentes@ejemplo.cl",
+                                                   "telefono": "+56 2 2598 2203"})
+        self.assertEqual(alerta["direccion"], "Lira 157")
+
+    def test_el_plazo_de_anticipacion_se_puede_cambiar_y_se_valida(self):
+        r = self.pedir("?dias=10")
+        self.assertEqual([x["identificador"] for x in r.data["por_vencer"]], ["A1"])
+        self.assertEqual(r.data["por_vencer"][0]["edificio"], "Edificio Las Palmas")
+        self.assertEqual(self.pedir("?dias=0").status_code, 400)
+        self.assertEqual(self.pedir("?dias=abc").status_code, 400)
+
+    def test_un_tecnico_no_ve_las_alertas(self):
+        self.client.force_authenticate(self.tecnico.usuario)
+        r = self.client.get("/api/certificaciones/")
+        self.assertEqual(r.status_code, 403)
+        self.assertIn("Solo el jefe técnico", r.data["detail"])
