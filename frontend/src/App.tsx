@@ -9,6 +9,7 @@ import Cartera from './paginas/Cartera'
 import Certificaciones from './paginas/Certificaciones'
 import Checklist from './paginas/Checklist'
 import EdificioDetalle from './paginas/EdificioDetalle'
+import ImportarPlanilla from './paginas/ImportarPlanilla'
 import Informes from './paginas/Informes'
 import Ingreso from './paginas/Ingreso'
 import Mantencion from './paginas/Mantencion'
@@ -116,6 +117,7 @@ export default function App() {
             {sesion.es_jefe && (
               <>
                 <Route path="/cartera" element={<Cartera />} />
+                <Route path="/cartera/importar" element={<ImportarPlanilla />} />
                 <Route path="/cartera/:id" element={<EdificioDetalle />} />
                 <Route path="/calendario" element={<Calendario />} />
                 <Route path="/checklists" element={<Registros />} />
