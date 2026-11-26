@@ -13,7 +13,7 @@
 | Entrega | Entrega 3 (16 – 29 de noviembre de 2026) |
 | Responsable | Matias Valenzuela |
 | Participan (simulado) | Jefe técnico de Ascensores Altavía |
-| Material | Texto vigente del artículo 5.9.5 (`OGUC_art_5.9.5_extracto.txt`), registros de H06 y maqueta P-08 del informe |
+| Material | Texto vigente del artículo 5.9.5 (`OGUC_art_5.9.5_extracto.txt`), registros de H06 y maqueta P-06 del informe |
 | Bloquea a | SIMA-21 · H09 Generar el informe mensual en PDF |
 
 ## 1. Qué exige la norma (ejecutado)
@@ -54,7 +54,7 @@ sección completa por cada ascensor.
 
 ## 3. Formato acordado para H09 (simulado)
 
-El jefe técnico revisó la maqueta P-08 (`maqueta_P-08.png`) con la tabla anterior y acordó este
+El jefe técnico revisó la maqueta P-06 (`maqueta_P-06.png`) con la tabla anterior y acordó este
 formato:
 
 | Parte del informe | Contenido | Cubre |

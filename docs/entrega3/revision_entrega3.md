@@ -9,7 +9,7 @@
 
 | ID | Elemento | Puntos | Estado en JIRA | Evidencia |
 |---|---|---|---|---|
-| A05 | Revisar el formato del informe contra la OGUC | 2 h | Terminado | `a05/acta_A05.md` (**simulación**), extracto de la norma y maqueta P-08 |
+| A05 | Revisar el formato del informe contra la OGUC | 2 h | Terminado | `a05/acta_A05.md` (**simulación**), extracto de la norma y maqueta P-06 |
 | H09 | Generar el informe mensual en PDF | 5 | Terminado | `criterios_aceptacion.md`, capturas 03 a 08, `ejemplos_informe/` |
 | H10 | Alertar certificaciones por vencer | 3 | Terminado | `criterios_aceptacion.md`, capturas 00 a 02 |
 | RF-06 | Alertar las certificaciones vencidas y por vencer | en H10 | Ficha en Confluence | Cinco criterios con prueba automática |
@@ -47,7 +47,7 @@ Registrada el 25 de noviembre de 2026. Como en las entregas anteriores, la acept
   celular de 400 px; cada paso dio el resultado esperado. Capturas 03 a 08.
 - Las 68 pruebas automáticas se corrieron el 25 de noviembre: todas aprobadas.
 - H09, H10 y A05 cumplen su criterio de término y pasaron a Terminado en JIRA, con un comentario de la revisión.
-- La página de Confluence quedó en la versión 11: ficha RF-07, CU-07 en los casos de uso, prototipo P-08,
+- La página de Confluence quedó en la versión 11: ficha RF-07, CU-07 en los casos de uso, prototipo P-06,
   BPMN con la tarea A-04 apoyada por SIMA y una fila nueva en el registro de cambios.
 - No se agregó alcance a la entrega.
 

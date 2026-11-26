@@ -28,7 +28,7 @@ correo del jefe técnico.
 
 Se hizo antes de construir H09, como pide el plan. Acta en `a05/acta_A05.md` (la reunión con el jefe técnico
 es SIMULACIÓN; la lectura de la norma y la comparación con los datos de SIMA sí se ejecutaron). Texto vigente
-del artículo 5.9.5 en `a05/OGUC_art_5.9.5_extracto.txt` y maqueta P-08 en `a05/maqueta_P-08.png`.
+del artículo 5.9.5 en `a05/OGUC_art_5.9.5_extracto.txt` y maqueta P-06 en `a05/maqueta_P-06.png`.
 Rama: `feature/SIMA-31-formato-informe`, unida a `main`.
 
 | Criterio de término | Comprobación |
@@ -40,7 +40,7 @@ Rama: `feature/SIMA-31-formato-informe`, unida a `main`.
 
 > Como administrador de edificio, quiero recibir el informe mensual de mantención en PDF para archivarlo y mostrarlo al certificador.
 
-Requisito: RF-07 (ficha en Confluence). Prototipo: P-08, maqueta revisada en A05. Depende de H06 y de A05.
+Requisito: RF-07 (ficha en Confluence). Prototipo: P-06, maqueta revisada en A05. Depende de H06 y de A05.
 Rama: `feature/SIMA-21-informe-pdf`, unida a `main`.
 
 | Criterio | Comprobación |
