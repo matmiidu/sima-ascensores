@@ -5,7 +5,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.routers import DefaultRouter
 
-from cartera.views import AscensorViewSet, EdificioViewSet, TecnicoViewSet, certificaciones
+from cartera.views import AscensorViewSet, EdificioViewSet, TecnicoViewSet, certificaciones, importar_planilla
 from planificacion.views import FeriadoViewSet, VisitaViewSet, generar, jornada, mis_visitas, resumen
 from terreno.views import ChecklistPruebaViewSet, PuntoChecklistViewSet, RegistroMantencionViewSet, informe_pdf, informes
 
@@ -55,6 +55,7 @@ urlpatterns = [
     path("api/mis-visitas/", mis_visitas),
     path("api/mis-visitas/jornada/", jornada),
     path("api/certificaciones/", certificaciones),
+    path("api/cartera/importar/", importar_planilla),
     path("api/informes/", informes),
     path("api/informes/<int:edificio_id>/pdf/", informe_pdf),
     path("api/", include(router.urls)),

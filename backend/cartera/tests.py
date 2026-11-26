@@ -1,6 +1,12 @@
+import csv
+import io
+import os
+import tempfile
+from datetime import date
 from io import StringIO
 
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from rest_framework.test import APITestCase
 
@@ -205,3 +211,102 @@ class AlertasCertificacionTests(APITestCase):
         r = self.client.get("/api/certificaciones/")
         self.assertEqual(r.status_code, 403)
         self.assertIn("Solo el jefe técnico", r.data["detail"])
+
+
+class ImportarPlanillaTests(APITestCase):
+    """H02 (RF-09): importar la cartera desde la planilla actual, con las reglas de A03 (riesgo R3)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        # La planilla ficticia de A03 sale de la cartera de demostración, con sus defectos (semilla fija).
+        call_command("cargar_demo", stdout=StringIO())
+        destino = os.path.join(tempfile.mkdtemp(), "planilla_actual.csv")
+        call_command("exportar_planilla_ficticia", destino, stdout=StringIO())
+        with open(destino, "rb") as fh:
+            cls.planilla = fh.read()
+
+    def setUp(self):
+        # Se parte con la cartera vacía, como la empresa antes de usar SIMA.
+        Ascensor.objects.all().delete()
+        Edificio.objects.all().delete()
+        self.jefe = get_user_model().objects.get(username="jefe")
+        self.client.force_authenticate(self.jefe)
+
+    def enviar(self, contenido=None, nombre="planilla_actual.csv", confirmar=False, tipo_uso=""):
+        archivo = SimpleUploadedFile(nombre, self.planilla if contenido is None else contenido)
+        datos = {"archivo": archivo, "tipo_uso": tipo_uso}
+        if confirmar:
+            datos["confirmar"] = "1"
+        return self.client.post("/api/cartera/importar/", datos, format="multipart")
+
+    def test_la_revision_muestra_lo_mismo_que_encontro_a03_sin_guardar_nada(self):
+        """CA-01: antes de guardar se ve qué pasa con cada fila; los defectos de A03 aparecen con su motivo."""
+        r = self.enviar()
+        self.assertEqual(r.status_code, 200)
+        res = r.data["resumen"]
+        self.assertEqual((res["filas"], res["nuevo"], res["rechazada"], res["edificios_nuevos"]), (144, 139, 5, 62))
+        motivos = [f["motivos"][0] for f in r.data["filas"] if f["estado"] == "rechazada"]
+        self.assertEqual(sum(m.startswith("repite el equipo de la fila") for m in motivos), 4)
+        self.assertEqual(sum(m.startswith("marcado como retirado") for m in motivos), 1)
+        avisos = [a for f in r.data["filas"] if f["estado"] != "rechazada" for a in f["avisos"]]
+        self.assertEqual(sum(a.startswith("sin fecha de certificación") for a in avisos), 9)
+        self.assertEqual(sum(a.startswith("comuna corregida") for a in avisos), 5)
+        self.assertEqual((Edificio.objects.count(), Ascensor.objects.count()), (0, 0))
+
+    def test_al_confirmar_se_guarda_todo_y_repetir_no_duplica(self):
+        """CA-02 y CA-03: se crean los edificios y equipos válidos; importar de nuevo no duplica nada."""
+        r = self.enviar(confirmar=True)
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(r.data["importado"]["equipos_nuevos"], 139)
+        self.assertEqual((Edificio.objects.count(), Ascensor.objects.count()), (62, 139))
+        self.assertEqual(Ascensor.objects.filter(vencimiento_certificacion__isnull=True).count(), 9)
+        self.assertFalse(Edificio.objects.filter(tecnico_asignado__isnull=True).exists())
+        self.assertFalse(Ascensor.objects.filter(identificador__icontains="asc").exists())
+        otra = self.enviar(confirmar=True)
+        self.assertEqual((otra.data["resumen"]["igual"], otra.data["resumen"]["nuevo"]), (139, 0))
+        self.assertEqual((Edificio.objects.count(), Ascensor.objects.count()), (62, 139))
+
+    def test_un_equipo_con_otro_vencimiento_se_actualiza(self):
+        """CA-03: si la planilla trae otra fecha para un equipo que ya está, se muestra el cambio y se corrige."""
+        self.enviar(confirmar=True)
+        texto = self.planilla.decode("utf-8-sig").splitlines()
+        cols = texto[1].split(";")
+        cols[8] = "31-12-2030"
+        texto[1] = ";".join(cols)
+        nueva = "\n".join(texto).encode("utf-8")
+        r = self.enviar(nueva)
+        cambiada = r.data["filas"][0]
+        self.assertEqual(cambiada["estado"], "actualiza")
+        self.assertTrue(cambiada["cambios"][0].endswith("→ 31-12-2030"))
+        self.enviar(nueva, confirmar=True)
+        a = Ascensor.objects.get(edificio__direccion=cols[2], identificador=cols[4])
+        self.assertEqual(a.vencimiento_certificacion, date(2030, 12, 31))
+
+    def test_tambien_lee_excel(self):
+        """CA-04: la misma planilla guardada como Excel (.xlsx) da el mismo resultado."""
+        from openpyxl import Workbook
+
+        libro = Workbook()
+        hoja = libro.active
+        for linea in csv.reader(io.StringIO(self.planilla.decode("utf-8-sig")), delimiter=";"):
+            hoja.append(linea)
+        salida = io.BytesIO()
+        libro.save(salida)
+        r = self.enviar(salida.getvalue(), nombre="planilla_actual.xlsx")
+        self.assertEqual((r.data["resumen"]["nuevo"], r.data["resumen"]["rechazada"]), (139, 5))
+
+    def test_archivo_o_columnas_invalidas_se_rechazan_con_un_mensaje(self):
+        """CA-05: un archivo que no es planilla o sin las columnas obligatorias se rechaza y dice qué falta."""
+        r = self.enviar(b"Nombre;Comuna\nTorre;Santiago\n")
+        self.assertEqual(r.status_code, 400)
+        self.assertTrue(r.data["detail"].startswith("A la planilla le falta la columna Edificio, Dirección, Equipo."))
+        r = self.enviar(b"hola", nombre="foto.png")
+        self.assertEqual(r.data["detail"], "La planilla debe ser un archivo .csv o .xlsx.")
+
+    def test_solo_el_personal_de_la_oficina_importa(self):
+        """CA-05: un técnico no puede importar la planilla."""
+        self.client.force_authenticate(get_user_model().objects.get(username="luis"))
+        r = self.enviar(confirmar=True)
+        self.assertEqual(r.status_code, 403)
+        self.assertEqual(r.data["detail"], "Solo el personal de la oficina importa la planilla.")
+        self.assertEqual(Ascensor.objects.count(), 0)
