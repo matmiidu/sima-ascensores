@@ -6,13 +6,13 @@ Proyecto de Ingeniería de Software I (UCM). Caso ficticio: **Ascensores Altaví
 | Entrega | Fechas | Elementos | Estado |
 |---|---|---|---|
 | Entrega 1 | 19 oct – 1 nov 2026 | H01, S01, H03, A03 | Construida; ver `docs/entrega1/` |
-| **Entrega 2** | 2 – 15 nov 2026 | H04, H06, A02 | Construida; ver `docs/entrega2/` |
-| Entrega 3 | 16 – 29 nov 2026 | H09, H10, A05 | Pendiente |
+| Entrega 2 | 2 – 15 nov 2026 | H04, H06, A02 | Construida; ver `docs/entrega2/` |
+| **Entrega 3** | 16 – 29 nov 2026 | H09, H10, A05 | Construida; ver `docs/entrega3/` |
 
 ## Tecnologías
 
 Python 3.12 · Django 5.2 con Django REST Framework · React 19 con TypeScript (Vite) como PWA ·
-PostgreSQL (SQLite en desarrollo si no hay `DATABASE_URL`).
+PostgreSQL (SQLite en desarrollo si no hay `DATABASE_URL`) · informe en PDF con xhtml2pdf, desde una plantilla HTML.
 
 ## Cómo correrlo
 
@@ -37,12 +37,12 @@ npm run dev            # http://localhost:5173
 npm run build && npm run preview   # http://localhost:4173
 ```
 
-Usuarios de prueba, todos con la clave `sima`: `jefe` para el jefe técnico (cartera y calendario) y `juan`,
+Usuarios de prueba, todos con la clave `sima`: `jefe` para el jefe técnico (cartera, calendario, certificaciones e informes) y `juan`,
 `rodrigo`, `camila`, `luis`, `andres` y `felipe` para los técnicos (sus visitas y el checklist).
 
 Panel de administración: http://localhost:8000/admin/ (usuario `jefe`).
 
-Pruebas: `cd backend && .venv/Scripts/python manage.py test` (56 pruebas).
+Pruebas: `cd backend && .venv/Scripts/python manage.py test` (68 pruebas).
 
 PostgreSQL opcional: `docker compose up -d` y `DATABASE_URL=postgres://sima:sima@localhost:5432/sima`.
 
@@ -50,16 +50,19 @@ PostgreSQL opcional: `docker compose up -d` y `DATABASE_URL=postgres://sima:sima
 
 ```
 backend/
-  cartera/        H01: edificios, ascensores y técnicos; H04: usuario de cada técnico
+  cartera/        H01: edificios, ascensores y técnicos; H04: usuario de cada técnico; H10: certificaciones
   planificacion/  H03: calendario mensual, feriados; H04: visitas del día de un técnico
-  terreno/        H06: registro de la mantención con su checklist (S01 queda como evidencia)
+  terreno/        H06: registro de la mantención con su checklist (S01 queda como evidencia);
+                  H09: informe mensual en PDF (informe.py y templates/terreno/informe_mensual.html)
   config/permisos.py   quién consulta y quién modifica
 frontend/src/
-  paginas/        Jefe técnico: Cartera, ficha de edificio, Calendario y registro de una mantención
+  paginas/        Jefe técnico: Cartera, ficha de edificio, Calendario, Checklists, Certificaciones,
+                  Informes y registro de una mantención
                   Técnico: Mis visitas y Checklist
   terreno.ts      copia de las visitas en el celular, guardado sin señal y envío al volver
 herramientas/
   validar_planilla.py   A03: revisión de la planilla y muestra para terreno
 docs/entrega1/    criterios de aceptación, resultado de S01, acta de A03, revisión y capturas
 docs/entrega2/    planificación, criterios de aceptación, acta de A02, verificación de RNF-01, revisión y capturas
+docs/entrega3/    criterios de aceptación, acta de A05 con el extracto de la OGUC, ejemplos del informe, revisión y capturas
 ```

@@ -110,3 +110,10 @@ CSRF_TRUSTED_ORIGINS = [
         "http://localhost:4173,http://127.0.0.1:4173,http://localhost:5173,http://127.0.0.1:5173",
     ).split(",") if o
 ]
+
+# Empresa mantenedora que firma el informe mensual (H09). La OGUC (art. 5.9.5) pide que el mantenedor esté
+# inscrito en el Registro de la Ley 20.296; Ascensores Altavía es ficticia y no tiene número real.
+SIMA_MANTENEDOR = {
+    "nombre": os.environ.get("SIMA_MANTENEDOR_NOMBRE", "Ascensores Altavía"),
+    "inscripcion": os.environ.get("SIMA_MANTENEDOR_INSCRIPCION", ""),
+}

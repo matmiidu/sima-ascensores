@@ -1,0 +1,143 @@
+{% comment %}
+Informe mensual de mantención de un edificio (H09). Formato acordado en A05
+(docs/entrega3/a05/acta_A05.md). Lo convierte a PDF xhtml2pdf, que entiende un
+subconjunto de CSS: tablas simples, sin flexbox ni grillas.
+{% endcomment %}<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Informe de mantención {{ edificio.nombre }} {{ nombre_mes }}</title>
+<style>
+  @page {
+    size: letter;
+    margin: 1.8cm 1.8cm 2.2cm 1.8cm;
+    @frame pie { -pdf-frame-content: pie; bottom: 0.9cm; margin-left: 1.8cm; margin-right: 1.8cm; height: 0.8cm; }
+  }
+  body { font-family: Helvetica; font-size: 9.5pt; color: #111; line-height: 1.3; }
+  h1 { font-size: 16pt; margin: 0 0 2pt 0; }
+  h2 { font-size: 12.5pt; margin: 10pt 0 4pt 0; padding-bottom: 2pt; border-bottom: 1pt solid #111; }
+  h3 { font-size: 10.5pt; margin: 9pt 0 3pt 0; }
+  p { margin: 0 0 4pt 0; }
+  .tenue { color: #555; }
+  .rojo { color: #b00000; }
+  table { width: 100%; margin-bottom: 4pt; }
+  th, td { border: 0.5pt solid #888; padding: 3pt 4pt 2pt 4pt; vertical-align: top; text-align: left; }
+  th { background-color: #eeeeee; font-weight: bold; }
+  td.etiqueta { width: 32%; background-color: #f6f6f6; }
+  table.datos td { border: none; border-bottom: 0.5pt solid #ccc; }
+  .detenido { border: 1.5pt solid #b00000; padding: 6pt; margin: 6pt 0; }
+  .parcial { border: 1pt solid #111; padding: 6pt; margin: 6pt 0; }
+  #pie { font-size: 8pt; color: #555; }
+</style>
+</head>
+<body>
+
+<div id="pie">{{ mantenedor.nombre }} · Informe de mantención de {{ edificio.nombre }}, {{ nombre_mes }} · Página <pdf:pagenumber> de <pdf:pagecount></div>
+
+<h1>{% if parcial %}Informe parcial de mantención{% else %}Informe de mantención{% endif %}</h1>
+<p><strong>{{ edificio.nombre }}</strong> · {{ nombre_mes|capfirst }}</p>
+
+<table class="datos">
+  <tr><td class="etiqueta">Empresa mantenedora</td><td>{{ mantenedor.nombre }}</td></tr>
+  <tr><td class="etiqueta">Inscripción en el Registro de la Ley 20.296</td>
+      <td>{% if mantenedor.inscripcion %}N.° {{ mantenedor.inscripcion }}{% else %}No registrada en SIMA (empresa del caso de estudio){% endif %}</td></tr>
+  <tr><td class="etiqueta">Edificio</td><td>{{ edificio.nombre }}, {{ edificio.direccion }}, {{ edificio.comuna }}</td></tr>
+  <tr><td class="etiqueta">Tipo de uso</td><td>{{ tipo_uso }}</td></tr>
+  <tr><td class="etiqueta">Administrador</td>
+      <td>{{ edificio.administrador_nombre|default:"Sin registrar" }}{% if edificio.administrador_correo %} · {{ edificio.administrador_correo }}{% endif %}{% if edificio.administrador_telefono %} · {{ edificio.administrador_telefono }}{% endif %}</td></tr>
+  <tr><td class="etiqueta">Fecha de emisión</td><td>{{ emitido|date:"j \d\e F \d\e Y" }}</td></tr>
+</table>
+
+<h2>Resumen del mes</h2>
+<table>
+  <tr><th>Ascensores</th><th>Mantenciones registradas</th><th>Equipos detenidos</th><th>Mantenciones que faltan</th></tr>
+  <tr><td>{{ secciones|length }}</td><td>{{ registradas|length }}</td>
+      <td>{% if detenidos %}<span class="rojo"><strong>{{ detenidos|length }}</strong></span>{% else %}0{% endif %}</td>
+      <td>{{ faltan|length }}</td></tr>
+</table>
+
+{% if detenidos %}
+<div class="detenido">
+  <p class="rojo"><strong>Equipos detenidos</strong></p>
+  {% for s in detenidos %}
+  <p><strong>{{ s.ascensor.identificador }}</strong>: {{ s.registro.falla }}</p>
+  {% endfor %}
+  <p>Según el artículo 5.9.5 de la OGUC, el equipo queda sin servicio y no se usa hasta que el mantenedor dé su conformidad.</p>
+</div>
+{% endif %}
+
+{% if parcial %}
+<div class="parcial">
+  <p><strong>Informe parcial.</strong> Falta registrar la mantención de {% for s in faltan %}{{ s.ascensor.identificador }}{% if not forloop.last %}, {% endif %}{% endfor %}. El informe se completa cuando se registren.</p>
+</div>
+{% endif %}
+
+<p class="tenue">Cada mantención se hizo con el {{ checklist }} ({{ puntos }} puntos). El informe trae una sección por ascensor, con las tareas revisadas, las observaciones y el estado en que quedó el equipo.</p>
+
+{% for s in secciones %}
+<pdf:nextpage />
+<h2>Ascensor {{ s.ascensor.identificador }}</h2>
+<table class="datos">
+  <tr><td class="etiqueta">Tipo y uso</td><td>{{ s.tipo }} · {{ s.uso }}</td></tr>
+  <tr><td class="etiqueta">Marca y número de serie</td><td>{{ s.ascensor.marca|default:"Sin marca registrada" }}{% if s.ascensor.numero_serie %} · N.° de serie {{ s.ascensor.numero_serie }}{% endif %}</td></tr>
+  <tr><td class="etiqueta">Paradas y capacidad</td><td>{{ s.ascensor.paradas }} paradas{% if s.ascensor.capacidad_kg %} · {{ s.ascensor.capacidad_kg }} kg{% endif %}</td></tr>
+  <tr><td class="etiqueta">Certificación</td>
+      <td>{% if s.certificacion.vencimiento %}Vence el {{ s.certificacion.vencimiento|date:"d-m-Y" }} ({{ s.certificacion.estado }}){% else %}Sin fecha de vencimiento registrada{% endif %} · Se certifica {{ periodicidad }}</td></tr>
+</table>
+
+{% if s.registro %}
+<h3>Mantención del mes</h3>
+<table class="datos">
+  <tr><td class="etiqueta">Fecha</td><td>{{ s.registro.fecha|date:"j \d\e F \d\e Y" }}</td></tr>
+  <tr><td class="etiqueta">Técnico</td><td>{{ s.registro.tecnico }}</td></tr>
+  <tr><td class="etiqueta">Registro</td><td>{{ s.registro.codigo }}</td></tr>
+  <tr><td class="etiqueta">Estado del equipo</td>
+      <td>{% if s.registro.operativo %}Quedó operativo{% else %}<span class="rojo"><strong>Quedó detenido</strong></span>{% endif %}</td></tr>
+</table>
+
+<h3>Tareas revisadas</h3>
+<table>
+  <tr><th style="width: 9%">Punto</th><th style="width: 45%">Tarea</th><th style="width: 16%">Resultado</th><th>Observación</th></tr>
+  {% for r in s.registro.respuestas %}
+  <tr><td>{{ r.codigo }}</td><td>{{ r.punto }}</td>
+      <td>{% if r.observacion %}<strong>{{ r.resultado }}</strong>{% else %}{{ r.resultado }}{% endif %}</td>
+      <td>{{ r.comentario }}</td></tr>
+  {% endfor %}
+</table>
+
+<h3>Acciones y observaciones</h3>
+<p>{{ s.registro.observaciones|default:"El técnico no dejó observaciones generales."|linebreaksbr }}</p>
+
+{% if not s.registro.operativo %}
+<div class="detenido">
+  <p class="rojo"><strong>Equipo detenido</strong></p>
+  <p>Falla: {{ s.registro.falla|linebreaksbr }}</p>
+  <p>El equipo queda sin servicio y no se usa hasta que el mantenedor dé su conformidad (OGUC, artículo 5.9.5, numeral 3).</p>
+</div>
+{% endif %}
+{% else %}
+<div class="parcial">
+  {% if s.visita %}
+  <p><strong>Mantención pendiente.</strong> La visita está programada para el {{ s.visita.fecha|date:"j \d\e F" }} con {{ s.visita.tecnico.nombre }}{% if s.visita.estado == "no_realizada" %}, y quedó marcada como no realizada{% endif %}.</p>
+  {% else %}
+  <p><strong>Sin visita este mes.</strong> El ascensor no tiene visita programada en {{ nombre_mes }}.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+<h3>Registro del año {{ mes.year }}</h3>
+{% if s.anio %}
+<table>
+  <tr><th style="width: 25%">Mes</th><th style="width: 30%">Fecha de la mantención</th><th>Técnico</th></tr>
+  {% for f in s.anio %}
+  <tr><td>{{ f.mes|capfirst }}</td><td>{{ f.fecha|date:"d-m-Y" }}</td><td>{{ f.tecnico }}</td></tr>
+  {% endfor %}
+</table>
+<p class="tenue">Empresa: {{ mantenedor.nombre }}. Estos datos son los del cuadro anual que va en la cabina.</p>
+{% else %}
+<p class="tenue">Todavía no hay mantenciones registradas en SIMA este año.</p>
+{% endif %}
+{% endfor %}
+
+</body>
+</html>

@@ -1,5 +1,14 @@
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
+
+from cartera.models import Edificio
+from config.permisos import es_jefe
+
+from .informe import MesInvalido, datos_del_informe, generar_pdf, informes_del_mes, leer_mes, nombre_archivo, nombre_mes
 
 from .models import ChecklistPrueba, PuntoChecklist, RegistroMantencion
 from .registro import Rechazo, registrar_mantencion
@@ -86,3 +95,40 @@ class RegistroMantencionViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelV
             self.get_serializer(registro).data,
             status=status.HTTP_201_CREATED if creado else status.HTTP_200_OK,
         )
+
+
+SOLO_JEFE_INFORMES = "Solo el jefe técnico descarga los informes mensuales."
+
+
+@api_view(["GET"])
+def informes(request):
+    """Edificios con visitas en el mes y si su informe está completo (H09). ?mes=AAAA-MM, por omisión el mes en curso."""
+    if not es_jefe(request.user):
+        return Response({"detail": SOLO_JEFE_INFORMES}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        mes = leer_mes(request.query_params.get("mes"), timezone.localdate())
+    except MesInvalido as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(informes_del_mes(mes))
+
+
+@api_view(["GET"])
+def informe_pdf(request, edificio_id):
+    """Informe mensual de mantención del edificio en PDF (H09). ?mes=AAAA-MM, por omisión el mes en curso."""
+    if not es_jefe(request.user):
+        return Response({"detail": SOLO_JEFE_INFORMES}, status=status.HTTP_403_FORBIDDEN)
+    hoy = timezone.localdate()
+    try:
+        mes = leer_mes(request.query_params.get("mes"), hoy)
+    except MesInvalido as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    edificio = get_object_or_404(Edificio, pk=edificio_id)
+    datos = datos_del_informe(edificio, mes, hoy)
+    if datos is None:
+        return Response(
+            {"detail": f"{edificio.nombre} no tiene mantenciones programadas en {nombre_mes(mes)}."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    respuesta = HttpResponse(generar_pdf(datos), content_type="application/pdf")
+    respuesta["Content-Disposition"] = f'attachment; filename="{nombre_archivo(edificio, mes)}"'
+    return respuesta
