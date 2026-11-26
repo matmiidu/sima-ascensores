@@ -1,0 +1,55 @@
+Extracto del artículo 5.9.5 de la Ordenanza General de Urbanismo y Construcciones (OGUC), DS N.° 47 de 1992, MINVU.
+Numeral 3 (Mantención) completo y numeral 4 (Certificación) hasta el párrafo de la Carpeta de Ascensores.
+Texto vigente leído en la Biblioteca del Congreso Nacional, https://www.bcn.cl/leychile/navegar?idNorma=8201, el 25 de noviembre de 2026.
+Se quitaron las notas al margen de las modificaciones (Decreto 8 de Vivienda, D.O. 06.09.2017).
+
+3.  Mantención de ascensores, montacargas y escaleras o rampas mecánicas.
+
+Serán responsables de la mantención los propietarios, quienes deberán celebrar el o los contratos correspondientes para estos efectos.
+
+La mantención de estas instalaciones se efectuará una vez por mes como mínimo, debiendo instalarse al interior de la cabina en el caso de ascensores, o en el exterior en un lugar visible en el resto de las instalaciones, un cuadro anual en el que se registren la fecha de mantención, la empresa y el nombre del personal técnico que la efectuó.
+
+La mantención de las instalaciones a que se refiere este artículo, deberá ser efectuada por una persona natural o jurídica con inscripción vigente en la especialidad Mantenedores del Registro de la Ley Nº20.296, quien deberá acreditar su condición de tal mediante la presentación de un certificado de inscripción vigente en el mencionado registro que deberá formar parte de los contratos respectivos, debiendo entregar además, en cada mantención que realice conforme al plan anual de mantención especificado por el fabricante, una copia del certificado que acredite la vigencia de dicha inscripción.
+
+La mantención de las instalaciones comprenderá el ejecutar las tareas definidas en el plan anual de mantención especificado por el fabricante de la instalación y las acciones preventivas y/o correctivas que procedan, de modo que garanticen el buen estado de la instalación y el funcionamiento sin riesgos para las personas, sean estos los usuarios de las instalaciones o el personal técnico que las mantiene.
+
+El mantenedor deberá entregar al propietario o al administrador, según corresponda, en cada mantención que realice, un informe en que conste el seguimiento del plan anual de mantención especificado por el fabricante y el detalle de las acciones preventivas y/o correctivas efectuadas a cada instalación. Asimismo, y cuando corresponda, en el mismo informe se comunicará qué componentes deben reemplazarse por desperfecto, desgaste, defecto de funcionamiento u otra circunstancia semejante, señalando igualmente el plazo en el cual debe estar ejecutado el respectivo remplazo.
+
+En caso que el funcionamiento de estas instalaciones presente riesgo inminente para las personas, el mantenedor deberá señalar dicha situación en el informe de mantención, detallando las fallas o defectos, a fin de que el propietario o el administrador, según corresponda, adopte las respectivas acciones, obras o reparaciones determinadas por el mantenedor.
+
+En estos casos, las instalaciones deberán ser dejadas sin servicio por el propietario o el administrador, según corresponda, y no podrán ser utilizadas hasta que se realicen las acciones, obras o reparaciones determinadas en dicho informe.
+
+En esta circunstancia, el propietario o el administrador, según corresponda, instalará un aviso en un lugar visible y próximo a dicha instalación, informando que las instalaciones han sido dejadas sin servicio. Una vez finalizadas las acciones, obras o reparaciones determinadas, el mantenedor dará su conformidad para que la instalación sea puesta en servicio. Entretanto, las instalaciones no podrán ser utilizadas.
+
+En este último caso, el aviso debe contener la siguiente información:
+
+- Título: "INSTALACIÓN NO OPERATIVA".
+- Motivo: presenta riesgo para las personas.
+- Nº Identificación de la instalación.
+- Tipo de instalación, sea que se trate de un ascensor vertical, ascensor inclinado o funicular, montacarga, escalera o rampa mecánica.
+- Fecha de la inspección.
+- Nombre del mantenedor.
+- Nº inscripción del mantenedor en el Registro de la Ley Nº 20.296.
+
+4.  Certificación de ascensores, montacargas y escaleras o rampas mecánicas.
+
+Los propietarios o el administrador, tratándose de edificios acogidos al régimen de copropiedad inmobiliaria, deberán acreditar mediante un certificado emitido por una persona natural o jurídica inscrita en la especialidad Certificadores del Registro de la Ley Nº 20.296, que las instalaciones de que trata este artículo han sido adecuadamente mantenidas y que se encuentran en condiciones de seguir funcionando.
+
+Las certificaciones se realizarán conforme al destino de las edificaciones y en función de la capacidad de transporte de la instalación, según se indica en la siguiente tabla:
+
+Destino del Edificio    Capacidad      Periodicidad
+de Transporte    Certificación
+
+Vivienda.            Cualquiera        Cada 2 años
+Destinos del uso de  Cualquiera        Cada 1 año
+suelo Equipamiento.
+Destinos del uso de  hasta 8%          Cada 2 años
+suelo: Residencial    sobre 8%          Cada 1 año
+excepto vivienda;
+Actividades
+Productivas;
+Infraestructura.
+
+Las edificaciones que consideren más de un destino deberán aplicar las exigencias de la tabla anterior conforme al destino predominante de la referida edificación. En caso de haber igual proporción de destinos, se aplicará la exigencia mayor.
+
+Para la certificación, el propietario o el administrador, cuando corresponda, deberá poner a disposición del certificador la Carpeta de Ascensores e Instalaciones similares señalada en el numeral 13 del artículo 5.1.6. de esta Ordenanza General. Esta contendrá además los respectivos informes de mantención del período que corresponde a la certificación y copia de todas las certificaciones efectuadas al respectivo ascensor, montacarga, rampa o escalera mecánica.
