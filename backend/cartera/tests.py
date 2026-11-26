@@ -95,10 +95,13 @@ class CargaDemoTests(APITestCase):
         User = get_user_model()
         self.assertTrue(User.objects.get(username="jefe").is_staff)
         self.assertFalse(User.objects.get(username="luis").is_staff)
-        # Volver a cargar no cambia los nombres de usuario ni deja usuarios sueltos.
+        # H02: la asistente administrativa es personal de la oficina (importa la planilla).
+        self.assertTrue(User.objects.get(username="asistente").is_staff)
+        # Volver a cargar no cambia los nombres de usuario ni deja usuarios sueltos:
+        # jefe, asistente y los seis técnicos.
         call_command("cargar_demo", borrar=True, stdout=StringIO())
         self.assertEqual(set(Tecnico.objects.values_list("usuario__username", flat=True)), nombres)
-        self.assertEqual(User.objects.count(), 7)
+        self.assertEqual(User.objects.count(), 8)
 
 
 class UsuariosYPermisosTests(APITestCase):
