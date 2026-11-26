@@ -1,7 +1,17 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { diaLargo, horaDe, mayuscula, sumarDias } from '../fechas'
-import { alCambiar, cargarDia, cargarPuntos, quitar, sincronizar, type DiaCargado, type MantencionLocal } from '../terreno'
+import { diaLargo, fechaDe, horaDe, hoyLocal, mayuscula, sumarDias } from '../fechas'
+import {
+  alCambiar,
+  cargarDia,
+  jornadaGuardada,
+  prepararJornada,
+  quitar,
+  sincronizar,
+  type DiaCargado,
+  type JornadaGuardada,
+  type MantencionLocal,
+} from '../terreno'
 import type { Sesion, VisitaDelDia } from '../tipos'
 import { useEnLinea } from '../useEnLinea'
 import { useMantencionesLocales } from '../useTerreno'
@@ -87,6 +97,7 @@ export default function MisVisitas({ sesion }: { sesion: Sesion }) {
   const [error, setError] = useState('')
   const enLinea = useEnLinea()
   const guardadas = useMantencionesLocales()
+  const [jornada, setJornada] = useState<JornadaGuardada | null>(jornadaGuardada)
 
   const cargar = useCallback(async () => {
     try {
@@ -104,9 +115,18 @@ export default function MisVisitas({ sesion }: { sesion: Sesion }) {
   }, [cargar, enLinea])
   useEffect(() => alCambiar((aviso) => aviso === 'sincronizado' && cargar()), [cargar])
 
-  // Con señal se deja a mano el checklist, para poder abrirlo después sin señal.
+  // Con señal se guarda en el celular la jornada completa (hoy y seis días más, con la última mantención de
+  // cada equipo) y el checklist, para poder trabajar sin señal (H07). Se renueva cada 30 minutos.
   useEffect(() => {
-    if (enLinea) cargarPuntos().catch(() => {})
+    if (!enLinea) return
+    const preparar = () => prepararJornada().then(setJornada).catch(() => {})
+    preparar()
+    const cada = window.setInterval(preparar, 30 * 60 * 1000)
+    const quitarAviso = alCambiar((aviso) => aviso === 'sincronizado' && preparar())
+    return () => {
+      window.clearInterval(cada)
+      quitarAviso()
+    }
   }, [enLinea])
 
   if (!dia) return <p className={error ? 'error' : 'tenue'}>{error || 'Cargando…'}</p>
@@ -135,7 +155,17 @@ export default function MisVisitas({ sesion }: { sesion: Sesion }) {
         )}
       </p>
       {error && <p className="error">{error}</p>}
-      {copiaDe && <p className="aviso">Sin señal: se muestra la lista guardada en el celular a las {horaDe(copiaDe)}.</p>}
+      {copiaDe && (
+        <p className="aviso">
+          Sin señal: se muestra la lista guardada en el celular {fechaDe(copiaDe) === hoyLocal() ? 'hoy' : `el ${diaLargo(fechaDe(copiaDe))}`} a
+          las {horaDe(copiaDe)}. Lo que registres queda en el celular y se envía solo al volver la señal.
+        </p>
+      )}
+      {jornada && !copiaDe && (
+        <p className="tenue centro jornada">
+          Listo para trabajar sin señal hasta el {diaLargo(jornada.hasta)} (guardado a las {horaDe(jornada.guardado)}).
+        </p>
+      )}
 
       {pendientes.length > 0 && (
         <div className="tarjeta estado alerta">

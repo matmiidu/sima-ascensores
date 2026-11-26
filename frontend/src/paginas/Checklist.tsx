@@ -22,6 +22,31 @@ import {
 import { RESULTADOS, type PuntoChecklist, type RegistroMantencion, type Resultado, type Sesion, type VisitaDelDia } from '../tipos'
 
 const VACIO: Borrador = { respuestas: {}, operativo: null, falla: '', observaciones: '' }
+
+/**
+ * Lo que se hizo en la mantención anterior del mismo equipo (H07). Viene en la copia de la jornada, así que se ve
+ * también sin señal: el técnico sabe si el equipo quedó detenido y qué se observó antes de empezar.
+ */
+function UltimaMantencionDelEquipo({ visita }: { visita: VisitaDelDia }) {
+  const u = visita.ultima_mantencion
+  if (!u) return <p className="tenue">Este equipo no tiene mantenciones anteriores registradas en SIMA.</p>
+  return (
+    <details className={`tarjeta anterior ${u.operativo ? '' : 'detenido'}`} open={!u.operativo || u.puntos_con_observacion.length > 0}>
+      <summary>
+        <strong>Última mantención: {fechaCorta(u.fecha)}</strong> · {u.tecnico} ·{' '}
+        <span className={`etiqueta ${u.operativo ? 'ok' : 'peligro'}`}>{u.operativo ? 'Quedó operativo' : 'Quedó detenido'}</span>
+      </summary>
+      {!u.operativo && <p>Falla: {u.falla}</p>}
+      {u.puntos_con_observacion.map((o) => (
+        <p key={o.codigo}>
+          {o.codigo} {o.descripcion}: {o.comentario}
+        </p>
+      ))}
+      {u.observaciones && <p className="tenue">Observaciones: {u.observaciones}</p>}
+      {u.operativo && u.puntos_con_observacion.length === 0 && !u.observaciones && <p className="tenue">Sin observaciones.</p>}
+    </details>
+  )
+}
 const SIN_FALTAS: Faltas = { puntos: {} }
 
 const arriba = () => window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -249,6 +274,7 @@ export default function Checklist({ sesion }: { sesion: Sesion }) {
         <p className="aviso">Visita atrasada: estaba programada para el {diaLargo(visita.fecha)}.</p>
       )}
       {rechazo && <p className="error" role="alert">{rechazo}</p>}
+      <UltimaMantencionDelEquipo visita={visita} />
 
       <form className="tarjeta" onSubmit={guardar} noValidate>
         {puntos.map((p, i) => {

@@ -2,6 +2,11 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Servidor de Django al que se reenvían /api, /admin y /static. SIMA_API permite apuntar a otro (por ejemplo,
+// una base de pruebas en otro puerto) sin tocar este archivo.
+const API = process.env.SIMA_API ?? 'http://127.0.0.1:8000'
+const proxy = { '/api': API, '/admin': API, '/static': API }
+
 export default defineConfig({
   plugins: [
     react(),
@@ -44,18 +49,10 @@ export default defineConfig({
   ],
   server: {
     host: true,
-    proxy: {
-      '/api': 'http://127.0.0.1:8000',
-      '/admin': 'http://127.0.0.1:8000',
-      '/static': 'http://127.0.0.1:8000',
-    },
+    proxy,
   },
   preview: {
     host: true,
-    proxy: {
-      '/api': 'http://127.0.0.1:8000',
-      '/admin': 'http://127.0.0.1:8000',
-      '/static': 'http://127.0.0.1:8000',
-    },
+    proxy,
   },
 })
