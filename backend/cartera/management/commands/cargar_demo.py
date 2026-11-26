@@ -58,6 +58,15 @@ def repartir_ascensores(rng, total_edificios, total_ascensores):
     return cuenta
 
 
+def crear_asistente(User):
+    """La asistente administrativa (H02) es personal de la oficina: importa la planilla y mantiene la cartera."""
+    if User.objects.filter(username="asistente").exists():
+        return []
+    User.objects.create_user("asistente", password=CLAVE_DEMO, is_staff=True,
+                             first_name="Asistente", last_name="administrativa")
+    return ["asistente"]
+
+
 class Command(BaseCommand):
     help = "Carga la cartera ficticia del caso (62 edificios, 140 ascensores, 6 técnicos)."
 
@@ -69,9 +78,9 @@ class Command(BaseCommand):
         User = get_user_model()
         if Edificio.objects.exists() and not borrar:
             self.stdout.write("La cartera ya tiene datos; use --borrar para recargarla.")
-            creados = crear_usuarios_tecnicos(CLAVE_DEMO)
+            creados = crear_usuarios_tecnicos(CLAVE_DEMO) + crear_asistente(User)
             if creados:
-                self.stdout.write(f"Se crearon los usuarios de los técnicos que faltaban: {', '.join(creados)} "
+                self.stdout.write(f"Se crearon los usuarios que faltaban: {', '.join(creados)} "
                                   f"(clave {CLAVE_DEMO}).")
             return
         if borrar:
@@ -135,10 +144,11 @@ class Command(BaseCommand):
             jefe.first_name, jefe.last_name = "Jefe", "Técnico"
             jefe.save()
         crear_usuarios_tecnicos(CLAVE_DEMO)
+        crear_asistente(User)
         usuarios = ", ".join(Tecnico.objects.exclude(usuario=None).values_list("usuario__username", flat=True))
 
         self.stdout.write(self.style.SUCCESS(
             f"Cargados {Tecnico.objects.count()} técnicos, {Edificio.objects.count()} edificios "
             f"y {Ascensor.objects.count()} ascensores. Usuarios de prueba (clave {CLAVE_DEMO}): jefe para el jefe "
-            f"técnico; {usuarios} para los técnicos."
+            f"técnico; asistente para la asistente administrativa; {usuarios} para los técnicos."
         ))

@@ -130,3 +130,27 @@ export async function descargar(ruta: string, nombre: string) {
   a.remove()
   setTimeout(() => URL.revokeObjectURL(url), 10000)
 }
+
+/** Envía un formulario con archivos (por ejemplo, la planilla de H02). El navegador pone el Content-Type. */
+export async function enviarArchivo<T>(ruta: string, datos: FormData): Promise<T> {
+  const t = token()
+  const res = await fetch(`/api/${ruta}`, {
+    method: 'POST',
+    body: datos,
+    headers: { Accept: 'application/json', ...(t ? { Authorization: `Token ${t}` } : {}) },
+  })
+  let cuerpo: unknown = null
+  try {
+    cuerpo = await res.json()
+  } catch {
+    /* sin cuerpo JSON: vale el código de estado */
+  }
+  if (!res.ok) {
+    if (res.status === 401) {
+      guardarToken(null)
+      window.dispatchEvent(new Event(SIN_SESION))
+    }
+    throw new ErrorApi(res.status, cuerpo)
+  }
+  return cuerpo as T
+}

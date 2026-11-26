@@ -69,9 +69,12 @@ export default function Cartera() {
       <div className="encabezado">
         <h1>Cartera</h1>
         {!formulario && (
-          <button className="primario" onClick={() => setFormulario({ ...VACIO })}>
-            + Edificio
-          </button>
+          <span className="acciones">
+            <Link className="boton" to="/cartera/importar">Importar planilla</Link>
+            <button className="primario" onClick={() => setFormulario({ ...VACIO })}>
+              + Edificio
+            </button>
+          </span>
         )}
       </div>
 

@@ -20,3 +20,23 @@ Requisito: RF-08 (ficha en Confluence). Depende de S01 y H06. Rama: `feature/SIM
 Lo que se agregó sobre H06: el punto `/api/mis-visitas/jornada/`, la última mantención en cada visita, la
 descarga automática de la jornada (al entrar, cada 30 minutos y después de cada envío) y el encabezado
 `Cache-Control: no-store` en la API.
+
+## H02 · Importar la cartera desde la planilla (SIMA-24, 3 puntos)
+
+> Como asistente administrativa, quiero importar la cartera desde la planilla actual para no digitar 140 equipos.
+
+Requisito: RF-09 (ficha en Confluence). Depende de A03, cuya planilla (`docs/entrega1/a03/planilla_actual.csv`)
+se usó para probarla. Rama: `feature/SIMA-24-importar-planilla`, unida a `main`. La asistente entra con el usuario
+`asistente`, que es personal de la oficina, igual que el jefe técnico.
+
+| Criterio | Comprobación |
+|---|---|
+| CA-01 Antes de guardar se ve qué pasará con cada fila; los defectos que encontró A03 aparecen con su motivo (4 repetidos, 1 retirado, 9 sin fecha, 5 comunas mal escritas) | `test_la_revision_muestra_lo_mismo_que_encontro_a03_sin_guardar_nada` · capturas h02_01 a h02_03 |
+| CA-02 Al confirmar se crean los equipos válidos y sus edificios, con el técnico de la planilla; los sin fecha quedan "sin fecha" para Certificaciones | `test_al_confirmar_se_guarda_todo_y_repetir_no_duplica` · capturas h02_04 y h02_05 |
+| CA-03 Importar de nuevo no duplica nada; si un equipo trae otra fecha, se muestra el cambio y se corrige | `test_al_confirmar_se_guarda_todo_y_repetir_no_duplica` · `test_un_equipo_con_otro_vencimiento_se_actualiza` · captura h02_06 |
+| CA-04 La misma planilla se lee igual desde CSV o desde Excel (.xlsx) | `test_tambien_lee_excel` |
+| CA-05 Un archivo que no es planilla o sin las columnas obligatorias se rechaza y dice qué falta; un técnico no puede importar | `test_archivo_o_columnas_invalidas_se_rechazan_con_un_mensaje` · `test_solo_el_personal_de_la_oficina_importa` |
+
+Recorrido en pantalla de celular con una base aparte, cartera vacía y la planilla de A03: 144 filas revisadas,
+139 equipos nuevos en 62 edificios, 5 filas no importadas y 14 con avisos; la segunda vez, 139 sin cambios y
+"No hay nada que importar".
