@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 from django.utils import timezone
 from rest_framework import status, viewsets
@@ -127,20 +127,57 @@ def mis_visitas(request):
     except ValueError:
         return Response({"detail": "El parámetro fecha debe tener la forma AAAA-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
 
-    suyas = (
+    return Response(_dia_del_tecnico(tecnico, fecha, hoy))
+
+
+def _visitas_de(tecnico):
+    return (
         Visita.objects.filter(tecnico=tecnico)
         .select_related("ascensor", "ascensor__edificio", "tecnico", "registro")
         .order_by("fecha", "ascensor__edificio__comuna", "ascensor__edificio__nombre", "ascensor__edificio_id",
                   "ascensor__identificador")
     )
+
+
+def _dia_del_tecnico(tecnico, fecha, hoy):
+    """Lo que ve el técnico en Mis visitas para un día: sus visitas, las atrasadas del mes y la siguiente fecha."""
+    suyas = _visitas_de(tecnico)
     atrasadas = suyas.filter(mes=hoy.replace(day=1), fecha__lt=hoy, estado=Visita.Estado.PROGRAMADA)
     # Si el día consultado no tiene visitas, sirve saber cuándo es la siguiente.
     proxima = suyas.filter(fecha__gt=fecha, estado=Visita.Estado.PROGRAMADA).values_list("fecha", flat=True).first()
-    return Response({
+    return {
         "tecnico": {"id": tecnico.id, "nombre": tecnico.nombre},
         "hoy": hoy.isoformat(),
         "fecha": fecha.isoformat(),
         "visitas": VisitaDelDiaSerializer(suyas.filter(fecha=fecha), many=True).data,
         "atrasadas": VisitaDelDiaSerializer(atrasadas, many=True).data,
         "proxima_fecha": proxima.isoformat() if proxima else None,
+    }
+
+
+DIAS_JORNADA = 7
+
+
+@api_view(["GET"])
+def jornada(request):
+    """Hoy y los días siguientes de un técnico, para guardarlos en el celular y trabajar sin señal (H07).
+
+    Cada día viene igual que en /api/mis-visitas/?fecha=..., así el celular los guarda como si se hubieran
+    abierto uno por uno. ?dias=N cambia cuántos días (1 a 14; 7 por omisión).
+    """
+    tecnico = tecnico_de(request.user)
+    if tecnico is None:
+        return Response({"detail": "Solo un técnico prepara su jornada para trabajar sin señal."},
+                        status=status.HTTP_403_FORBIDDEN)
+    valor = request.query_params.get("dias", str(DIAS_JORNADA))
+    if not valor.isdigit() or not 1 <= int(valor) <= 14:
+        return Response({"detail": "Los días deben ser un número entre 1 y 14."}, status=status.HTTP_400_BAD_REQUEST)
+    hoy = timezone.localdate()
+    dias = [_dia_del_tecnico(tecnico, hoy + timedelta(days=n), hoy) for n in range(int(valor))]
+    return Response({
+        "tecnico": {"id": tecnico.id, "nombre": tecnico.nombre},
+        "hoy": hoy.isoformat(),
+        "hasta": dias[-1]["fecha"],
+        "dias": dias,
+        "visitas": sum(len(d["visitas"]) for d in dias),
     })

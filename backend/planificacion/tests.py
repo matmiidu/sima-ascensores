@@ -1,9 +1,10 @@
 from collections import Counter
-from datetime import date
+from datetime import date, datetime, timedelta
 from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from cartera.models import Ascensor, Edificio, Tecnico
@@ -231,3 +232,86 @@ class MisVisitasTests(APITestCase):
         self.assertEqual(cambio.status_code, 403)
         self.assertEqual(self.client.delete(f"/api/visitas/{v.id}/").status_code, 403)
         self.assertEqual(Visita.objects.filter(mes=date(2026, 12, 1)).count(), 0)
+
+
+class JornadaSinSenalTests(APITestCase):
+    """H07 (RF-08): el celular guarda la jornada completa y la última mantención de cada equipo."""
+
+    def setUp(self):
+        from terreno.models import PuntoChecklist, RegistroMantencion
+
+        User = get_user_model()
+        self.luis = Tecnico.objects.create(nombre="Luis Muñoz", usuario=User.objects.create_user("luis", password="x"))
+        self.camila = Tecnico.objects.create(nombre="Camila Rojas",
+                                             usuario=User.objects.create_user("camila", password="x"))
+        self.jefe = User.objects.create_user("jefe", password="x", is_staff=True)
+        edificio = Edificio.objects.create(nombre="Edificio Plaza", direccion="Lira 157", comuna="Santiago",
+                                           tipo_uso="residencial", tecnico_asignado=self.luis)
+        self.a1 = Ascensor.objects.create(edificio=edificio, identificador="A1", tipo="electrico")
+        self.a2 = Ascensor.objects.create(edificio=edificio, identificador="A2", tipo="electrico")
+        self.hoy = timezone.localdate()
+        mes = self.hoy.replace(day=1)
+        # Mes anterior: A1 quedó detenido con una observación en P04 (la registró Camila).
+        anterior = (mes - timedelta(days=1)).replace(day=1)
+        v_previa = Visita.objects.create(ascensor=self.a1, tecnico=self.camila, mes=anterior, fecha=anterior,
+                                         estado=Visita.Estado.REALIZADA)
+        previo = RegistroMantencion.objects.create(
+            visita=v_previa, tecnico=self.camila, operativo=False, falla_descripcion="Freno con desgaste",
+            observaciones="Se cambian balatas la próxima visita",
+            guardado_en_dispositivo=timezone.make_aware(datetime.combine(anterior, datetime.min.time().replace(hour=11))))
+        for p in PuntoChecklist.objects.filter(activo=True):
+            previo.respuestas.create(punto=p, resultado="observacion" if p.codigo == "P04" else "bien",
+                                     comentario="Puerta del piso 3 con juego" if p.codigo == "P04" else "")
+        # Este mes: A1 hoy y A2 en tres días; una visita de Luis fuera de la jornada (en 10 días).
+        self.v1 = Visita.objects.create(ascensor=self.a1, tecnico=self.luis, mes=mes, fecha=self.hoy)
+        self.v2 = Visita.objects.create(ascensor=self.a2, tecnico=self.luis, mes=mes, fecha=self.hoy + timedelta(days=3))
+        otro = Ascensor.objects.create(edificio=edificio, identificador="A3", tipo="electrico")
+        Visita.objects.create(ascensor=otro, tecnico=self.luis, mes=mes, fecha=self.hoy + timedelta(days=10))
+        self.client.force_authenticate(self.luis.usuario)
+
+    def test_la_jornada_trae_hoy_y_los_seis_dias_siguientes(self):
+        """CA-01: con señal, el celular recibe hoy y los seis días siguientes, cada uno como en Mis visitas."""
+        r = self.client.get("/api/mis-visitas/jornada/")
+        self.assertEqual(r.status_code, 200)
+        fechas = [d["fecha"] for d in r.data["dias"]]
+        self.assertEqual(fechas, [(self.hoy + timedelta(days=n)).isoformat() for n in range(7)])
+        self.assertEqual(r.data["hasta"], (self.hoy + timedelta(days=6)).isoformat())
+        self.assertEqual(r.data["visitas"], 2)  # la visita en 10 días no entra
+        self.assertEqual([v["id"] for v in r.data["dias"][0]["visitas"]], [self.v1.id])
+        self.assertEqual([v["id"] for v in r.data["dias"][3]["visitas"]], [self.v2.id])
+        # Cada día trae lo mismo que Mis visitas, para guardarlo igual en el celular.
+        un_dia = self.client.get(f"/api/mis-visitas/?fecha={(self.hoy + timedelta(days=3)).isoformat()}").data
+        self.assertEqual(r.data["dias"][3], un_dia)
+
+    def test_cada_visita_trae_la_ultima_mantencion_del_equipo(self):
+        """CA-03: la visita trae la mantención anterior del equipo, con la falla y lo observado."""
+        v = self.client.get("/api/mis-visitas/jornada/").data["dias"][0]["visitas"][0]
+        u = v["ultima_mantencion"]
+        self.assertEqual((u["tecnico"], u["operativo"], u["falla"]), ("Camila Rojas", False, "Freno con desgaste"))
+        self.assertEqual(u["observaciones"], "Se cambian balatas la próxima visita")
+        self.assertEqual(u["puntos_con_observacion"],
+                         [{"codigo": "P04", "descripcion": u["puntos_con_observacion"][0]["descripcion"],
+                           "comentario": "Puerta del piso 3 con juego"}])
+        # A2 no tiene mantenciones anteriores.
+        v2 = self.client.get("/api/mis-visitas/jornada/").data["dias"][3]["visitas"][0]
+        self.assertIsNone(v2["ultima_mantencion"])
+
+    def test_cambiar_los_dias_y_rechazar_un_valor_invalido(self):
+        """CA-01: se pueden pedir de 1 a 14 días; otro valor se rechaza con un mensaje."""
+        self.assertEqual(len(self.client.get("/api/mis-visitas/jornada/?dias=14").data["dias"]), 14)
+        for malo in ("0", "15", "siete"):
+            r = self.client.get(f"/api/mis-visitas/jornada/?dias={malo}")
+            self.assertEqual(r.status_code, 400)
+            self.assertEqual(r.data["detail"], "Los días deben ser un número entre 1 y 14.")
+
+    def test_solo_un_tecnico_prepara_su_jornada(self):
+        """La jornada es la del técnico que entra: el jefe técnico no tiene una."""
+        self.client.force_authenticate(self.jefe)
+        r = self.client.get("/api/mis-visitas/jornada/")
+        self.assertEqual(r.status_code, 403)
+        self.assertEqual(r.data["detail"], "Solo un técnico prepara su jornada para trabajar sin señal.")
+
+    def test_las_respuestas_de_la_api_no_quedan_en_la_cache_del_navegador(self):
+        """CA-02: sin señal, lo que se ve sale de la copia de la aplicación (con aviso), no de la caché del navegador."""
+        self.assertEqual(self.client.get("/api/mis-visitas/jornada/")["Cache-Control"], "no-store")
+        self.assertEqual(self.client.get("/api/mis-visitas/")["Cache-Control"], "no-store")

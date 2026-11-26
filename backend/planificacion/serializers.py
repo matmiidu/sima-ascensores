@@ -1,6 +1,32 @@
+from django.utils import timezone
 from rest_framework import serializers
 
 from .models import Feriado, GeneracionCalendario, Visita
+
+
+def ultima_mantencion(visita):
+    """La mantención anterior del mismo ascensor (H07): lo que el técnico necesita saber al llegar al equipo,
+    también sin señal, porque viaja en la copia de la jornada. None si el equipo no tiene mantenciones previas."""
+    from terreno.models import RegistroMantencion  # terreno depende de planificación; se importa aquí
+
+    previo = (RegistroMantencion.objects.filter(visita__ascensor_id=visita.ascensor_id)
+              .exclude(visita_id=visita.id).filter(visita__fecha__lte=visita.fecha)
+              .select_related("tecnico").prefetch_related("respuestas__punto")
+              .order_by("-guardado_en_dispositivo").first())
+    if previo is None:
+        return None
+    return {
+        "codigo": previo.codigo,
+        "fecha": timezone.localtime(previo.guardado_en_dispositivo).date().isoformat(),
+        "tecnico": previo.tecnico.nombre,
+        "operativo": previo.operativo,
+        "falla": previo.falla_descripcion,
+        "observaciones": previo.observaciones,
+        "puntos_con_observacion": [
+            {"codigo": r.punto.codigo, "descripcion": r.punto.descripcion, "comentario": r.comentario}
+            for r in previo.respuestas.all() if r.resultado == r.Resultado.OBSERVACION
+        ],
+    }
 
 
 def resumen_del_registro(visita):
@@ -64,18 +90,22 @@ class VisitaDelDiaSerializer(serializers.ModelSerializer):
     administrador_telefono = serializers.CharField(source="ascensor.edificio.administrador_telefono", read_only=True)
     tecnico_nombre = serializers.CharField(source="tecnico.nombre", read_only=True)
     registro = serializers.SerializerMethodField()
+    ultima_mantencion = serializers.SerializerMethodField()
 
     class Meta:
         model = Visita
         fields = [
             "id", "fecha", "mes", "estado", "ascensor", "ascensor_identificador", "marca", "paradas", "tipo_display",
             "edificio_id", "edificio_nombre", "direccion", "comuna", "administrador_nombre", "administrador_telefono",
-            "tecnico", "tecnico_nombre", "registro",
+            "tecnico", "tecnico_nombre", "registro", "ultima_mantencion",
         ]
         read_only_fields = fields
 
     def get_registro(self, obj):
         return resumen_del_registro(obj)
+
+    def get_ultima_mantencion(self, obj):
+        return ultima_mantencion(obj)
 
 
 class GenerarSerializer(serializers.Serializer):
