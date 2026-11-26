@@ -16,11 +16,12 @@ const VACIO = {
 }
 
 function estadoCertificacion(vence: string | null) {
-  if (!vence) return { clase: 'alerta', texto: 'Sin fecha' }
+  // La fecha es la de la certificación (cada uno o dos años), no la de la mantención mensual.
+  if (!vence) return { clase: 'alerta', texto: 'Certificación sin fecha' }
   const dias = Math.round((new Date(vence + 'T12:00').getTime() - Date.now()) / 86400000)
-  if (dias < 0) return { clase: 'peligro', texto: `Vencida ${fechaCorta(vence)}` }
-  if (dias <= 60) return { clase: 'alerta', texto: `Vence ${fechaCorta(vence)}` }
-  return { clase: 'ok', texto: `Vigente hasta ${fechaCorta(vence)}` }
+  if (dias < 0) return { clase: 'peligro', texto: `Certificación vencida ${fechaCorta(vence)}` }
+  if (dias <= 60) return { clase: 'alerta', texto: `Certificación vence ${fechaCorta(vence)}` }
+  return { clase: 'ok', texto: `Certificación vigente hasta ${fechaCorta(vence)}` }
 }
 
 export default function EdificioDetalle() {
@@ -143,6 +144,8 @@ export default function EdificioDetalle() {
       <ul className="lista">
         {edificio.ascensores.map((a) => {
           const cert = estadoCertificacion(a.vencimiento_certificacion)
+          // Las mantenciones vienen de la más reciente a la más antigua: la primera del ascensor es la última.
+          const ultima = mantenciones.find((m) => m.ascensor === a.id)
           return (
             <li key={a.id} className={`fila ${a.activo ? '' : 'inactivo'}`}>
               <div>
@@ -151,7 +154,14 @@ export default function EdificioDetalle() {
                   {a.tipo_display} · {a.uso_display} · {a.paradas} paradas{a.marca && ` · ${a.marca}`}
                 </span>
               </div>
-              <span className={`etiqueta ${cert.clase}`}>{cert.texto}</span>
+              <span className="derecha">
+                {ultima && !ultima.operativo && (
+                  <Link to={`/mantenciones/${ultima.id}`} className="etiqueta peligro">
+                    Detenido desde {fechaCorta(fechaDe(ultima.guardado_en_dispositivo))}
+                  </Link>
+                )}
+                <span className={`etiqueta ${cert.clase}`}>{cert.texto}</span>
+              </span>
             </li>
           )
         })}
