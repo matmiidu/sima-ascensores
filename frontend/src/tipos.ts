@@ -197,3 +197,24 @@ export interface Certificaciones {
   por_vencer: AlertaCertificacion[]
   sin_fecha: AlertaCertificacion[]
 }
+
+export interface InformeEdificio {
+  id: number
+  nombre: string
+  direccion: string
+  comuna: string
+  tecnico: string
+  administrador: { nombre: string; correo: string }
+  visitas: number
+  registradas: number
+  detenidos: number
+  faltan: number
+  completo: boolean
+  archivo: string
+}
+
+export interface InformesDelMes {
+  mes: string
+  nombre_mes: string
+  edificios: InformeEdificio[]
+}

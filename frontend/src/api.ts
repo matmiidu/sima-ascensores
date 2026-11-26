@@ -101,3 +101,32 @@ export async function iniciarSesion(usuario: string, clave: string) {
   const r = await enviar<{ token: string }>('token/', { username: usuario, password: clave })
   guardarToken(r.token)
 }
+
+/** Descarga un archivo de la API (por ejemplo, el informe en PDF) y lo guarda con el nombre dado. */
+export async function descargar(ruta: string, nombre: string) {
+  const t = token()
+  const res = await fetch(`/api/${ruta}`, {
+    headers: { Accept: 'application/pdf, application/json', ...(t ? { Authorization: `Token ${t}` } : {}) },
+  })
+  if (!res.ok) {
+    let datos: unknown = null
+    try {
+      datos = await res.json()
+    } catch {
+      /* sin cuerpo JSON: vale el código de estado */
+    }
+    if (res.status === 401) {
+      guardarToken(null)
+      window.dispatchEvent(new Event(SIN_SESION))
+    }
+    throw new ErrorApi(res.status, datos)
+  }
+  const url = URL.createObjectURL(await res.blob())
+  const a = document.createElement('a')
+  a.href = url
+  a.download = nombre
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 10000)
+}
