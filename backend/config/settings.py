@@ -37,6 +37,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Entrega los archivos del panel de administración en producción (no hace falta en desarrollo).
+    *(["whitenoise.middleware.WhiteNoiseMiddleware"] if not DEBUG else []),
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -118,3 +120,13 @@ SIMA_MANTENEDOR = {
     "nombre": os.environ.get("SIMA_MANTENEDOR_NOMBRE", "Ascensores Altavía"),
     "inscripcion": os.environ.get("SIMA_MANTENEDOR_INSCRIPCION", ""),
 }
+
+# Producción (DJANGO_DEBUG=0): detrás de Caddy, que recibe HTTPS y reenvía a gunicorn.
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    STORAGES = {
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+    }

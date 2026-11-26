@@ -1,0 +1,4 @@
+# Lo de desarrollo más lo que necesita el servidor de producción (contenedor backend).
+-r requirements.txt
+gunicorn==27.0.1
+whitenoise==6.12.0

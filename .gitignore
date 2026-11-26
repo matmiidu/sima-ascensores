@@ -13,3 +13,6 @@ frontend/dist/
 
 # Herramientas
 .playwright-mcp/
+
+# Despliegue
+despliegue/produccion.env

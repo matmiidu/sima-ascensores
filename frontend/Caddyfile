@@ -1,0 +1,27 @@
+# Servidor web de SIMA en producción.
+# - HTTPS automático: con un dominio real pide el certificado a Let's Encrypt; con "localhost" usa un
+#   certificado propio de Caddy (el navegador avisa que no lo conoce).
+# - /api, /admin y /static van al servidor de Django; lo demás es la aplicación (PWA).
+{$SIMA_DOMINIO:localhost} {
+	encode gzip
+
+	@django path /api/* /admin /admin/* /static/*
+	handle @django {
+		reverse_proxy backend:8000
+	}
+
+	handle {
+		root * /srv
+		# El service worker y su lista de archivos se revisan siempre, para que una versión nueva llegue al celular.
+		@sw path /sw.js /registerSW.js /manifest.webmanifest
+		header @sw Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "same-origin"
+	}
+}

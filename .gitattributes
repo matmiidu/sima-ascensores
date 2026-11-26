@@ -2,3 +2,8 @@
 *.pdf binary
 *.png binary
 *.docx binary
+
+# Archivos que se ejecutan o leen dentro de los contenedores Linux: siempre con saltos de línea LF
+*.sh text eol=lf
+Caddyfile text eol=lf
+Dockerfile text eol=lf
