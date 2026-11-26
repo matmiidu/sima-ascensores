@@ -7,7 +7,7 @@ from rest_framework.routers import DefaultRouter
 
 from cartera.views import AscensorViewSet, EdificioViewSet, TecnicoViewSet, certificaciones
 from planificacion.views import FeriadoViewSet, VisitaViewSet, generar, mis_visitas, resumen
-from terreno.views import ChecklistPruebaViewSet, PuntoChecklistViewSet, RegistroMantencionViewSet
+from terreno.views import ChecklistPruebaViewSet, PuntoChecklistViewSet, RegistroMantencionViewSet, informe_pdf, informes
 
 from .permisos import es_jefe, tecnico_de
 
@@ -54,5 +54,7 @@ urlpatterns = [
     path("api/calendario/resumen/", resumen),
     path("api/mis-visitas/", mis_visitas),
     path("api/certificaciones/", certificaciones),
+    path("api/informes/", informes),
+    path("api/informes/<int:edificio_id>/pdf/", informe_pdf),
     path("api/", include(router.urls)),
 ]
