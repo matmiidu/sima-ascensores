@@ -191,6 +191,9 @@ export async function limpiarEnviadas() {
 
 const CLAVE_DIAS = 'sima.terreno.dias'
 const CLAVE_PUNTOS = 'sima.terreno.puntos'
+const CLAVE_JORNADA = 'sima.terreno.jornada'
+// Días que se conservan en el celular: la jornada (hoy y seis más) y los días recientes ya vistos.
+const DIAS_GUARDADOS = 21
 
 interface CopiaDias {
   usuario: string
@@ -237,7 +240,7 @@ export async function cargarDia(fecha: string): Promise<DiaCargado> {
     copia.dias[datos.fecha] = { datos, guardado: new Date().toISOString() }
     // Se conservan solo los días recientes, para no llenar el celular.
     const fechas = Object.keys(copia.dias).sort()
-    for (const f of fechas.slice(0, Math.max(0, fechas.length - 10))) delete copia.dias[f]
+    for (const f of fechas.slice(0, Math.max(0, fechas.length - DIAS_GUARDADOS))) delete copia.dias[f]
     guardar(CLAVE_DIAS, copia)
     return { datos, copiaDe: null }
   } catch (e) {
@@ -245,10 +248,48 @@ export async function cargarDia(fecha: string): Promise<DiaCargado> {
     if (e instanceof ErrorApi && e.estado < 500) throw e
     const copia = copiaDias().dias[fecha || hoyDelCelular()]
     if (!copia) {
-      throw new Error('No hay señal y este día no está guardado en el celular. Abre la aplicación con señal al empezar la jornada.')
+      const j = jornadaGuardada()
+      throw new Error(
+        j
+          ? `No hay señal y este día no está guardado en el celular. La jornada guardada llega hasta el ${j.hasta.split('-').reverse().join('-')}.`
+          : 'No hay señal y este día no está guardado en el celular. Abre la aplicación con señal al empezar la jornada.',
+      )
     }
     return { datos: copia.datos, copiaDe: copia.guardado }
   }
+}
+
+// ---------- Jornada sin señal (H07) ----------
+
+export interface JornadaGuardada {
+  usuario: string
+  guardado: string
+  hasta: string
+  visitas: number
+}
+
+/** Qué jornada hay guardada en el celular para el usuario actual, o null si no hay ninguna. */
+export function jornadaGuardada(): JornadaGuardada | null {
+  const j = leer<JornadaGuardada>(CLAVE_JORNADA)
+  return j && j.usuario === usuarioActual() ? j : null
+}
+
+/**
+ * Con señal, guarda en el celular hoy y los seis días siguientes (con la última mantención de cada equipo)
+ * y el checklist, para trabajar toda la jornada sin señal (H07). Sin señal no hace nada y deja lo guardado.
+ */
+export async function prepararJornada(): Promise<JornadaGuardada> {
+  const r = await api<{ hasta: string; visitas: number; dias: MisVisitasDelDia[] }>('mis-visitas/jornada/')
+  const ahora = new Date().toISOString()
+  const copia = copiaDias()
+  for (const d of r.dias) copia.dias[d.fecha] = { datos: d, guardado: ahora }
+  const fechas = Object.keys(copia.dias).sort()
+  for (const f of fechas.slice(0, Math.max(0, fechas.length - DIAS_GUARDADOS))) delete copia.dias[f]
+  guardar(CLAVE_DIAS, copia)
+  await cargarPuntos()
+  const j: JornadaGuardada = { usuario: usuarioActual(), guardado: ahora, hasta: r.hasta, visitas: r.visitas }
+  guardar(CLAVE_JORNADA, j)
+  return j
 }
 
 /** Puntos del checklist. Igual que las visitas: del servidor si hay señal, de la copia si no. */

@@ -112,6 +112,18 @@ export interface VisitaDelDia {
   tecnico: number
   tecnico_nombre: string
   registro: ResumenRegistro | null
+  /** Mantención anterior del mismo equipo (H07); viaja en la copia del celular. */
+  ultima_mantencion: UltimaMantencion | null
+}
+
+export interface UltimaMantencion {
+  codigo: string
+  fecha: string
+  tecnico: string
+  operativo: boolean
+  falla: string
+  observaciones: string
+  puntos_con_observacion: { codigo: string; descripcion: string; comentario: string }[]
 }
 
 export interface MisVisitasDelDia {
