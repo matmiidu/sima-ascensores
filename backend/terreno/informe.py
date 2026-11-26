@@ -170,24 +170,23 @@ def informes_del_mes(mes):
                  )
                  .select_related("tecnico_asignado")
                  .order_by("comuna", "nombre"))
-    return {
-        "mes": f"{mes:%Y-%m}",
-        "nombre_mes": nombre_mes(mes),
-        "edificios": [
-            {
-                "id": e.id,
-                "nombre": e.nombre,
-                "direccion": e.direccion,
-                "comuna": e.comuna,
-                "tecnico": e.tecnico_asignado.nombre if e.tecnico_asignado else "",
-                "administrador": {"nombre": e.administrador_nombre, "correo": e.administrador_correo},
-                "visitas": e.visitas,
-                "registradas": e.registradas,
-                "detenidos": e.detenidos,
-                "faltan": e.visitas - e.registradas,
-                "completo": e.visitas == e.registradas,
-                "archivo": nombre_archivo(e, mes),
-            }
-            for e in edificios
-        ],
-    }
+    lista = [
+        {
+            "id": e.id,
+            "nombre": e.nombre,
+            "direccion": e.direccion,
+            "comuna": e.comuna,
+            "tecnico": e.tecnico_asignado.nombre if e.tecnico_asignado else "",
+            "administrador": {"nombre": e.administrador_nombre, "correo": e.administrador_correo},
+            "visitas": e.visitas,
+            "registradas": e.registradas,
+            "detenidos": e.detenidos,
+            "faltan": e.visitas - e.registradas,
+            "completo": e.visitas == e.registradas,
+            "archivo": nombre_archivo(e, mes),
+        }
+        for e in edificios
+    ]
+    # Primero los informes completos, después los que ya tienen mantenciones y al final los que no tienen ninguna.
+    lista.sort(key=lambda x: (not x["completo"], x["registradas"] == 0))
+    return {"mes": f"{mes:%Y-%m}", "nombre_mes": nombre_mes(mes), "edificios": lista}
